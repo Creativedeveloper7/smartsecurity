@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SmartSecurity Consult Website
+
+A complete, production-ready professional website for SmartSecurity Consult - expert security services in Kenya. Built with Next.js 14+, TypeScript, Tailwind CSS, and PostgreSQL.
+
+## Features
+
+- **Landing Page**: Professional hero section, biography, quick links, and trust indicators
+- **Blog/Articles**: Full-featured blog system with categories, search, and pagination
+- **Videos**: YouTube integration with categories and filtering
+- **E-Commerce Shop**: Product listings, shopping cart, and checkout
+- **Booking System**: Consultation booking with calendar integration
+- **Admin Dashboard**: Complete CRM with content management, analytics, and settings
+
+## Tech Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4 with custom color palette
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js with role-based access
+- **Payment**: Stripe integration
+- **Email**: Nodemailer for notifications
+- **Forms**: React Hook Form with Zod validation
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ and npm
+- PostgreSQL database
+- Stripe account (for payments)
+- Email service credentials (for notifications)
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd shioso
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env` and fill in your configuration values.
 
-## Learn More
+4. Set up the database:
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+shioso/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── admin/             # Admin dashboard pages
+│   ├── blog/              # Blog pages
+│   ├── videos/            # Videos page
+│   ├── shop/              # E-commerce pages
+│   └── bookings/          # Booking pages
+├── components/            # React components
+│   ├── layout/           # Layout components
+│   └── ui/               # UI components
+├── lib/                   # Utility functions
+├── prisma/               # Prisma schema and migrations
+└── public/               # Static assets
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Color Palette
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Primary**: Midnight Navy (#0A1A33), Cool Azure (#007CFF)
+- **Secondary**: Deep Teal (#005B6E), Platinum Gray (#F3F4F6), Light Gray (#E5E7EB)
+- **Typography**: Dark Charcoal (#1F2937), Graphite Gray (#2D3748), Slate Gray (#4A5768)
+
+## Database Schema
+
+The application uses Prisma ORM with the following main models:
+- User (with role-based authentication)
+- Article & Category (blog system)
+- Video (media content)
+- Product & Order (e-commerce)
+- Booking & Service (consultation system)
+- SiteSettings (configuration)
+
+## Admin Access
+
+Access the admin dashboard at `/admin/login`. Create an admin user through Prisma Studio or a seed script.
+
+## Deployment
+
+1. Set up environment variables on your hosting platform
+2. Run database migrations: `npx prisma migrate deploy`
+3. Build the application: `npm run build`
+4. Start the production server: `npm start`
+
+## License
+
+Private - All rights reserved

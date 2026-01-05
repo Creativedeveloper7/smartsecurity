@@ -1,26 +1,145 @@
+/* Import Inter font (Regular, Medium, SemiBold) - Must be first */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Colors */
+  --midnight-navy: #0A1A33;
+  --cool-azure: #007CFF;
+  
+  /* Secondary Colors */
+  --deep-teal: #005B6E;
+  --platinum-gray: #F3F4F6;
+  --light-gray: #E5E7EB;
+  
+  /* Typography Colors */
+  --dark-charcoal: #1F2937;
+  --graphite-gray: #2D3748;
+  --slate-gray: #4A5768;
+  
+  /* Status Colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  
+  /* Base */
+  --background: #FFFFFF;
+  --foreground: #1F2937;
+  
+  /* Root font setup */
+  --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @theme inline {
+  --color-midnight-navy: var(--midnight-navy);
+  --color-cool-azure: var(--cool-azure);
+  --color-deep-teal: var(--deep-teal);
+  --color-platinum-gray: var(--platinum-gray);
+  --color-light-gray: var(--light-gray);
+  --color-dark-charcoal: var(--dark-charcoal);
+  --color-graphite-gray: var(--graphite-gray);
+  --color-slate-gray: var(--slate-gray);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-primary);
+  --font-heading: var(--font-primary);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Apply globally */
+* {
+  font-family: var(--font-primary);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-primary);
+  line-height: 1.6;
+}
+
+/* Headings – Bold / Strong emphasis */
+h1, h2, h3 {
+  font-weight: 600; /* SemiBold */
+  letter-spacing: -0.02em;
+  color: var(--midnight-navy);
+}
+
+h1 {
+  font-size: 48px;
+}
+
+h2 {
+  font-size: 36px;
+}
+
+h3 {
+  font-size: 28px;
+  color: var(--dark-charcoal);
+}
+
+/* Sub-headings */
+h4, h5, h6 {
+  font-weight: 500; /* Medium */
+  letter-spacing: -0.01em;
+  color: var(--dark-charcoal);
+}
+
+h4 {
+  font-size: 24px;
+}
+
+h5 {
+  font-size: 20px;
+}
+
+h6 {
+  font-size: 18px;
+}
+
+/* Body / regular content */
+p, span, li, a, label, input, textarea {
+  font-weight: 400; /* Regular */
+  line-height: 1.6;
+}
+
+/* Buttons & UI text */
+button, .btn {
+  font-weight: 500;
+}
+
+a {
+  color: var(--cool-azure);
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Font Awesome Utility Classes */
+.fa-title {
+  font-weight: 900 !important;
+}
+
+.fa-subtitle {
+  font-weight: 600 !important;
+}
+
+.fa-text {
+  font-weight: 400 !important;
+}
+
+/* Ensure Font Awesome icons inherit proper styling */
+[class^="fa-"],
+[class*=" fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro" !important;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  display: inline-block;
 }
