@@ -38,7 +38,19 @@ export async function GET(request: Request) {
       name: error.name,
     });
     
-    // Return empty array instead of 500 error to prevent frontend breakage
+    // Check if it's a connection error
+    if (error.code === "P1001" || error.message?.includes("Can't reach database server")) {
+      console.error("❌ Database connection failed. Check DATABASE_URL in Vercel environment variables.");
+      return NextResponse.json(
+        { 
+          error: "Database connection failed",
+          message: "Please check your database configuration",
+        },
+        { status: 503 }
+      );
+    }
+    
+    // Return empty array for other errors
     return NextResponse.json({ videos: [] });
   }
 }

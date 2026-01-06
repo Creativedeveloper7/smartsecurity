@@ -61,10 +61,22 @@ export async function GET(request: Request) {
       message: error.message,
       code: error.code,
       name: error.name,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
     
-    // Return empty array instead of 500 error to prevent frontend breakage
-    // This allows the site to work even if database is temporarily unavailable
+    // Check if it's a connection error
+    if (error.code === "P1001" || error.message?.includes("Can't reach database server")) {
+      console.error("❌ Database connection failed. Check DATABASE_URL in Vercel environment variables.");
+      return NextResponse.json(
+        { 
+          error: "Database connection failed",
+          message: "Please check your database configuration",
+        },
+        { status: 503 }
+      );
+    }
+    
+    // Return empty array for other errors to prevent frontend breakage
     return NextResponse.json({
       articles: [],
       pagination: {
