@@ -50,12 +50,17 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/${filename}`;
+    // Build public and absolute URLs
+    const publicPath = `/uploads/${filename}`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    const absoluteUrl = baseUrl ? `${baseUrl}${publicPath}` : publicPath;
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: absoluteUrl,
+      path: publicPath,
       filename: filename,
     });
   } catch (error: any) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 interface Article {
   id: string;
@@ -16,22 +16,43 @@ interface Article {
 
 export default function BlogPage() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [categories, setCategories] = useState<string[]>(["All"]);
+  const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 9, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Base URL for resolving relative image paths (works in browser only)
+  const baseUrl = useMemo(() => {
+    if (typeof window !== "undefined") return window.location.origin;
+    return process.env.NEXT_PUBLIC_SITE_URL || "";
+  }, []);
+
+  const resolveImageUrl = (url?: string | null) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return `${baseUrl}${url}`;
+  };
+
   // Fetch articles and categories
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       try {
         setLoading(true);
+        const params = new URLSearchParams();
+        params.set("limit", pagination.limit.toString());
+        params.set("page", page.toString());
+        if (selectedCategory !== "all") params.set("category", selectedCategory);
+        if (searchQuery) params.set("search", searchQuery);
+
         const [articlesRes, categoriesRes] = await Promise.all([
-          fetch("/api/articles?limit=100"),
-          fetch("/api/categories"),
+          fetch(`/api/articles?${params.toString()}`, { signal: controller.signal }),
+          fetch("/api/categories", { signal: controller.signal }),
         ]);
 
         if (!articlesRes.ok) throw new Error("Failed to fetch articles");
@@ -41,8 +62,10 @@ export default function BlogPage() {
         const categoriesData = await categoriesRes.json();
 
         setArticles(articlesData.articles || []);
-        setCategories(["All", ...categoriesData.map((cat: any) => cat.name)]);
+        setPagination(articlesData.pagination || { page: 1, limit: 9, totalPages: 1, total: 0 });
+        setCategories([{ name: "All", slug: "all" }, ...(categoriesData || [])]);
       } catch (err: any) {
+        if (err.name === "AbortError") return;
         setError(err.message || "Failed to load articles");
         console.error("Error fetching data:", err);
       } finally {
@@ -51,7 +74,13 @@ export default function BlogPage() {
     };
 
     fetchData();
-  }, []);
+    return () => controller.abort();
+  }, [page, selectedCategory, searchQuery, pagination.limit]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, searchQuery]);
 
   const handleArticleClick = (e: React.MouseEvent, article: Article) => {
     e.preventDefault();
@@ -72,18 +101,54 @@ export default function BlogPage() {
     return Math.max(1, Math.ceil(words / 200));
   };
 
-  // Filter articles based on search query and category
-  const filteredArticles = articles.filter((article) => {
-    const articleCategories = article.categories.map((c) => c.name);
-    const matchesCategory =
-      selectedCategory === "All" || articleCategories.includes(selectedCategory);
-    const matchesSearch =
-      searchQuery === "" ||
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (article.excerpt && article.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      articleCategories.some((cat) => cat.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  // Articles already filtered server-side; keep as-is
+  const filteredArticles = articles;
+
+  // Pagination controls (compact, accessible)
+  const renderPagination = () => {
+    if (pagination.totalPages <= 1) return null;
+
+    const maxButtons = 5;
+    const start = Math.max(1, pagination.page - 2);
+    const end = Math.min(pagination.totalPages, start + maxButtons - 1);
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+
+    return (
+      <div className="mt-10 flex items-center justify-center gap-2">
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={pagination.page === 1}
+          className="rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#1F2937] hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Previous page"
+        >
+          Previous
+        </button>
+        {pages.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPage(p)}
+            className={`rounded-md px-3 py-2 text-sm ${
+              p === pagination.page
+                ? "bg-[#0A1A33] text-white"
+                : "border border-transparent text-[#1F2937] hover:border-[#E5E7EB] hover:bg-[#F3F4F6]"
+            }`}
+            aria-current={p === pagination.page ? "page" : undefined}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+          disabled={pagination.page === pagination.totalPages}
+          className="rounded-md border border-[#E5E7EB] px-3 py-2 text-sm text-[#1F2937] hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Next page"
+        >
+          Next
+        </button>
+      </div>
+    );
+  };
 
   // Get related articles (exclude current article, same category preferred)
   const getRelatedArticles = (currentArticle: Article) => {
@@ -123,14 +188,14 @@ export default function BlogPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F3F4F6] py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#F7F8FA] py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-12 text-center">
-            <h1 className="mb-4 text-xl font-heading font-bold text-[#0A1A33]">
+          <div className="mb-12 text-center space-y-3">
+            <h1 className="text-2xl font-heading font-bold text-[#0A1A33] sm:text-3xl">
               Articles & Insights
             </h1>
-            <p className="mx-auto max-w-2xl text-sm text-[#4A5768]">
+            <p className="mx-auto max-w-2xl text-sm text-[#4A5768] sm:text-base">
               Expert analysis and professional insights on security, criminal justice, and law enforcement
             </p>
           </div>
@@ -139,15 +204,15 @@ export default function BlogPage() {
           <div className="mb-8 flex flex-wrap justify-center gap-3">
             {categories.map((category) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-                  selectedCategory === category
+                key={category.slug}
+                onClick={() => setSelectedCategory(category.slug)}
+                className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
+                  selectedCategory === category.slug
                     ? "bg-[#007CFF] text-white"
                     : "bg-white text-[#2D3748] hover:bg-[#F3F4F6]"
                 }`}
               >
-                {category}
+                {category.name}
               </button>
             ))}
           </div>
@@ -176,67 +241,72 @@ export default function BlogPage() {
           </div>
 
           {/* Search Results Count */}
-          {searchQuery && (
-            <div className="mb-4 text-center text-sm text-[#4A5768]">
-              Found {filteredArticles.length} article{filteredArticles.length !== 1 ? "s" : ""} matching &quot;{searchQuery}&quot;
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-[#4A5768]">
+            <div>
+              {pagination.total} article{pagination.total !== 1 ? "s" : ""} • Page {pagination.page} of {pagination.totalPages}
             </div>
-          )}
+            {searchQuery && (
+              <div>
+                Found {filteredArticles.length} matching &quot;{searchQuery}&quot;
+              </div>
+            )}
+          </div>
 
           {/* Articles Grid */}
           {filteredArticles.length > 0 ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3">
               {filteredArticles.map((article) => {
                 const readingTime = calculateReadingTime(article.content);
                 const publishedDate = article.publishedAt
                   ? new Date(article.publishedAt)
                   : null;
                 const primaryCategory = article.categories[0]?.name || "Uncategorized";
+                const imageUrl = resolveImageUrl(article.featuredImage);
 
                 return (
                   <button
                     key={article.id}
                     onClick={(e) => handleArticleClick(e, article)}
-                    className="group w-full rounded-lg border border-[#E5E7EB] bg-white text-left shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
+                    className="group w-full rounded-xl border border-[#E5E7EB] bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#007CFF] hover:shadow-lg"
                   >
                     {/* Featured Image */}
-                    {article.featuredImage ? (
-                      <div className="h-48 w-full overflow-hidden rounded-t-lg">
+                    <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-gradient-to-br from-[#0A1A33] to-[#005B6E]">
+                      {imageUrl ? (
                         <img
-                          src={article.featuredImage}
+                          src={imageUrl}
                           alt={article.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          loading="lazy"
                         />
-                      </div>
-                    ) : (
-                      <div className="h-48 w-full overflow-hidden rounded-t-lg bg-gradient-to-br from-[#0A1A33] to-[#005B6E]">
+                      ) : (
                         <div className="flex h-full items-center justify-center">
                           <span className="text-white/50">Article Image</span>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Content */}
-                    <div className="p-6">
+                    <div className="p-6 space-y-3">
                       {/* Category Tag */}
-                      <span className="mb-3 inline-block rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#005B6E]">
+                      <span className="inline-block rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#005B6E]">
                         {primaryCategory}
                       </span>
 
                       {/* Title */}
-                      <h2 className="mb-2 text-sm font-heading font-semibold text-[#1F2937] group-hover:text-[#007CFF] transition-colors">
+                      <h2 className="text-base font-heading font-semibold leading-snug text-[#0F172A] transition-colors group-hover:text-[#007CFF] lg:text-lg">
                         {article.title}
                       </h2>
 
                       {/* Excerpt */}
                       {article.excerpt && (
-                        <p className="mb-4 text-sm leading-relaxed text-[#4A5768]">
+                        <p className="text-sm leading-relaxed text-[#4A5768] line-clamp-3">
                           {article.excerpt}
                         </p>
                       )}
 
                       {/* Meta Info */}
                       {publishedDate && (
-                        <div className="flex items-center gap-4 text-xs text-[#4A5768]">
+                        <div className="flex items-center gap-4 text-xs font-medium text-[#4A5768]">
                           <div className="flex items-center gap-1">
                             <i className="fa-regular fa-calendar fa-text"></i>
                             {publishedDate.toLocaleDateString("en-US", {
@@ -252,9 +322,8 @@ export default function BlogPage() {
                         </div>
                       )}
 
-                      {/* Read More */}
-                      <div className="mt-4 flex items-center text-sm font-medium text-[#007CFF]">
-                        Read More
+                      <div className="flex items-center text-sm font-semibold text-[#007CFF]">
+                        Read more
                         <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
                       </div>
                     </div>
@@ -281,6 +350,8 @@ export default function BlogPage() {
               )}
             </div>
           )}
+
+          {renderPagination()}
         </div>
       </div>
 
@@ -306,13 +377,13 @@ export default function BlogPage() {
             {/* Modal Content */}
             <div className="max-h-[90vh] overflow-y-auto">
               {/* Article Header */}
-              <div className="border-b border-[#E5E7EB] bg-white p-8">
+              <div className="border-b border-[#E5E7EB] bg-white p-8 space-y-3">
                 {selectedArticle.categories.length > 0 && (
                   <span className="mb-4 inline-block rounded-full bg-[#F3F4F6] px-4 py-2 text-sm font-medium text-[#005B6E]">
                     {selectedArticle.categories[0].name}
                   </span>
                 )}
-                <h1 className="mb-2 text-xl font-heading font-bold leading-tight text-[#0A1A33]">
+                <h1 className="text-2xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-3xl">
                   {selectedArticle.title}
                 </h1>
                 {selectedArticle.publishedAt && (
@@ -339,8 +410,18 @@ export default function BlogPage() {
 
               {/* Article Content */}
               <div className="p-8">
+                {selectedArticle.featuredImage && (
+                  <div className="mb-8 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F8FAFC]">
+                    <img
+                      src={resolveImageUrl(selectedArticle.featuredImage)}
+                      alt={selectedArticle.title}
+                      className="h-auto w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 <div
-                  className="prose max-w-none mb-12"
+                  className="prose prose-lg max-w-none mb-12 prose-headings:mb-3 prose-p:mb-4 prose-li:mb-2"
                   dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
                   style={{
                     color: "#2D3748",
