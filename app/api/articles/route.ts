@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -53,10 +55,14 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching articles:", error);
+    // Return more detailed error in development, generic in production
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? error.message || "Failed to fetch articles"
+      : "Failed to fetch articles";
     return NextResponse.json(
-      { error: "Failed to fetch articles" },
+      { error: errorMessage, details: process.env.NODE_ENV === "development" ? String(error) : undefined },
       { status: 500 }
     );
   }
