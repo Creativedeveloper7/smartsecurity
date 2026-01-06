@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+// @ts-ignore - module resolution is available at runtime
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
 
 export async function POST(request: Request) {
   try {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Supabase env vars missing", {
+        hasUrl: !!SUPABASE_URL,
+        hasServiceRole: !!SUPABASE_SERVICE_ROLE_KEY,
+      });
+      return NextResponse.json(
+        { error: "Supabase configuration missing on server" },
+        { status: 500 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -33,35 +47,54 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Generate unique filename/path
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const path = `articles/${timestamp}_${safeName}`;
+
+    // Ensure bucket exists and is public (no-op if it already exists)
+    await supabase.storage
+      .createBucket(SUPABASE_STORAGE_BUCKET, { public: true })
+      .catch(() => {});
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(SUPABASE_STORAGE_BUCKET)
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return NextResponse.json(
+        { error: uploadError.message || "Failed to upload file" },
+        { status: 500 }
+      );
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const filename = `${timestamp}_${originalName}`;
-    const filepath = join(uploadsDir, filename);
+    // Get public URL (requires bucket to be public or use signed URLs)
+    const { data: publicData } = supabase.storage
+      .from(SUPABASE_STORAGE_BUCKET)
+      .getPublicUrl(path);
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    let publicUrl = publicData?.publicUrl;
 
-    // Build public and absolute URLs
-    const publicPath = `/uploads/${filename}`;
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-    const absoluteUrl = baseUrl ? `${baseUrl}${publicPath}` : publicPath;
+    // Fallback: generate a signed URL (valid 30 days) if public URL isn't available
+    if (!publicUrl) {
+      const { data: signedData } = await supabase.storage
+        .from(SUPABASE_STORAGE_BUCKET)
+        .createSignedUrl(path, 60 * 60 * 24 * 30);
+      publicUrl = signedData?.signedUrl;
+    }
 
     return NextResponse.json({
       success: true,
-      url: absoluteUrl,
-      path: publicPath,
-      filename: filename,
+      url: publicUrl,
+      path,
+      bucket: SUPABASE_STORAGE_BUCKET,
     });
   } catch (error: any) {
     console.error("Error uploading file:", error);
