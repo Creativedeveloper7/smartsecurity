@@ -421,12 +421,14 @@ export default function BlogPage() {
                   </div>
                 )}
                 <div
-                  className="prose prose-lg max-w-none mb-12 prose-headings:mb-3 prose-p:mb-4 prose-li:mb-2"
+                  className="prose prose-lg max-w-3xl mx-auto mb-12
+                  prose-headings:mb-3 prose-headings:text-[#0A1A33] prose-headings:font-semibold
+                  prose-p:mb-5 prose-p:text-[#2D3748] prose-p:leading-relaxed
+                  prose-ul:mb-5 prose-ol:mb-5 prose-li:mb-2
+                  prose-strong:text-[#0A1A33]
+                  prose-a:text-[#007CFF] prose-a:no-underline hover:prose-a:underline
+                  prose-img:rounded-xl prose-img:border prose-img:border-[#E5E7EB]"
                   dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
-                  style={{
-                    color: "#2D3748",
-                    lineHeight: "1.6",
-                  }}
                 />
 
                 {/* Related Articles Section */}
