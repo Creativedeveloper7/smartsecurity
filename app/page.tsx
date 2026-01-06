@@ -201,9 +201,9 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-6">
                 {[
                   { number: "30+", label: "Years Experience" },
-                  { number: "500+", label: "Security Operations" },
-                  { number: "100+", label: "Consultations" },
-                  { number: "50+", label: "Expert Testimonies" },
+                  { number: "5", label: "Books Published" },
+                  { number: "100+", label: "Articles" },
+                  { number: "50+", label: "Media Engagements" },
                 ].map((stat) => (
                   <div key={stat.label} className="text-left">
                     <div className="mb-2 text-3xl font-heading font-bold text-[#0A1A33]">
