@@ -17,6 +17,36 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Suppress Google Play services errors from browser extensions
+              (function() {
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const message = args.join(' ');
+                  if (message.includes('play.google.com') || 
+                      message.includes('log?format=json') ||
+                      message.includes('401 (Unauthorized)') ||
+                      message.includes('rs=AA2YrTuH1gsWpNYrZNoVfHgbKLfZrAwkHA')) {
+                    return; // Suppress these errors
+                  }
+                  originalError.apply(console, args);
+                };
+                
+                // Suppress unhandled promise rejections from external services
+                window.addEventListener('unhandledrejection', function(event) {
+                  const reason = event.reason?.toString() || '';
+                  if (reason.includes('play.google.com') || reason.includes('log?format=json')) {
+                    event.preventDefault();
+                  }
+                });
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="antialiased">
         <FontAwesomeLoader />
         <NextAuthSessionProvider>

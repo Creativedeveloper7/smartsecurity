@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Fix for Prisma with Next.js 16 and Turbopack
+  serverExternalPackages: ["@prisma/client", "prisma"],
+  // Turbopack configuration (Next.js 16 uses Turbopack by default)
+  turbopack: {},
 };
 
 export default nextConfig;

@@ -1,6 +1,51 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const galleryImages = [
+    "/gallery/President.jpeg",
+    "/gallery/US.jpeg",
+    "/gallery/Bishop.jpeg",
+    "/gallery/salute.jpeg",
+    "/gallery/service.jpeg",
+    "/gallery/Swearing.jpeg",
+    "/gallery/UN .jpeg",
+    "/images/DG.png",
+  ];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % galleryImages.length);
+    }, 3000); // Change image every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [galleryImages.length]);
+
+  const goToNext = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % galleryImages.length);
+  };
+
+  const goToPrevious = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + galleryImages.length) % galleryImages.length);
+  };
+
+  useEffect(() => {
+    if (isBioModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isBioModalOpen]);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -9,13 +54,24 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left: Text Content */}
             <div className="flex flex-col justify-center">
-              <h1 className="mb-6 text-4xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-5xl lg:text-6xl">
+              {/* Logo */}
+              <div className="mb-6">
+        <Image
+                  src="/smart.png"
+                  alt="SmartSecurity Consult"
+                  width={200}
+                  height={70}
+                  className="h-auto w-auto max-w-[200px]"
+          priority
+        />
+              </div>
+              <h1 className="mb-6 text-2xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-3xl lg:text-4xl">
                 SmartSecurity Consult
           </h1>
-              <p className="mb-4 text-xl text-[#2D3748]">
+              <p className="mb-4 text-base text-[#2D3748]">
                 Expert Security Services in Kenya
               </p>
-              <p className="mb-8 text-lg leading-relaxed text-[#4A5768]">
+              <p className="mb-8 text-sm leading-relaxed text-[#4A5768]">
                 With extensive experience in high-level policing, security detail, intelligence,
                 criminal handling, and consultancy. Providing authoritative security solutions
                 for government and private sector clients.
@@ -38,15 +94,57 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Professional Portrait */}
+            {/* Right: Professional Portrait Carousel */}
             <div className="flex items-center justify-center">
-              <div className="relative h-[400px] w-full max-w-md overflow-hidden rounded-lg shadow-2xl">
-                <div className="h-full w-full bg-gradient-to-br from-[#0A1A33] to-[#005B6E] flex items-center justify-center">
-                  <i className="fa-solid fa-shield-halved fa-title text-8xl text-white/20"></i>
-                </div>
-                {/* Placeholder for professional photo */}
-                <div className="absolute inset-0 flex items-center justify-center bg-[#F3F4F6]">
-                  <p className="text-[#4A5768]">Professional Photo</p>
+              <div className="relative h-[400px] w-full max-w-md overflow-hidden rounded-lg shadow-2xl bg-[#F3F4F6]">
+                {/* Carousel Images */}
+                {galleryImages.map((image, index) => (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-opacity duration-500 ${
+                      index === currentImageIndex ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`Gallery image ${index + 1}`}
+                      fill
+                      className="object-contain"
+                      priority={index === 0}
+                    />
+                  </div>
+                ))}
+
+                {/* Navigation Arrows */}
+                <button
+                  onClick={goToPrevious}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white transition-all hover:text-[#F3F4F6]"
+                  aria-label="Previous image"
+                >
+                  <i className="fa-solid fa-chevron-left fa-text text-2xl"></i>
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white transition-all hover:text-[#F3F4F6]"
+                  aria-label="Next image"
+                >
+                  <i className="fa-solid fa-chevron-right fa-text text-2xl"></i>
+                </button>
+
+                {/* Dots Indicator */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {galleryImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentImageIndex
+                          ? "w-8 bg-white"
+                          : "w-2 bg-white/50 hover:bg-white/75"
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -55,81 +153,153 @@ export default function Home() {
       </section>
 
       {/* Biography Section */}
-      <section className="bg-[#F3F4F6] py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-heading font-bold text-[#0A1A33] lg:text-4xl">
-              Professional Biography
-            </h2>
-            <div className="mx-auto h-1 w-24 bg-[#005B6E]"></div>
-          </div>
-
-          <div className="mx-auto max-w-4xl">
-            <div className="rounded-lg bg-white p-8 shadow-md">
-              <p className="mb-6 text-lg leading-relaxed text-[#2D3748]">
-                With over three decades of distinguished service in Kenya&apos;s security sector,
-                I bring unparalleled expertise in high-level policing, executive protection,
-                intelligence operations, and criminal justice consultation. My career has spanned
-                critical roles in government security, where I have been instrumental in developing
-                and implementing comprehensive security strategies for high-profile individuals
-                and institutions.
-              </p>
-              <p className="mb-6 text-lg leading-relaxed text-[#2D3748]">
-                My extensive background includes specialized training in threat assessment,
-                risk management, and crisis response. I have successfully managed complex security
-                operations, provided expert testimony in high-stakes legal proceedings, and
-                delivered strategic security consultations to both public and private sector
-                organizations across East Africa.
-              </p>
-              <p className="text-lg leading-relaxed text-[#2D3748]">
-                Now transitioning into private consultancy, I am committed to sharing my knowledge
-                and expertise to help organizations enhance their security posture, navigate
-                complex security challenges, and build resilient protection frameworks.
-              </p>
-            </div>
-
-            {/* Areas of Expertise */}
-            <div className="mt-12">
-              <h3 className="mb-6 text-2xl font-heading font-semibold text-[#1F2937]">
-                Areas of Expertise
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                {[
-                  "High-Level Policing",
-                  "Executive Protection",
-                  "Intelligence Operations",
-                  "Criminal Investigation",
-                  "Security Strategy",
-                  "Risk Assessment",
-                  "Crisis Management",
-                  "Expert Testimony",
-                ].map((expertise) => (
-                  <span
-                    key={expertise}
-                    className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#005B6E]"
-                  >
-                    {expertise}
-                  </span>
-                ))}
+      <section className="bg-[#f5f5f5]" style={{ padding: "80px" }}>
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-[60px] lg:grid-cols-[400px_1fr]">
+            {/* Left Column: Portrait */}
+            <div className="relative">
+              <div className="relative h-[400px] w-[400px] overflow-hidden shadow-lg" style={{ borderLeft: "8px solid rgb(255, 255, 255)" }}>
+                <Image
+                  src="/gallery/Swearing.jpeg"
+                  alt="Bruno Isohi Shioso"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/10 to-transparent p-6">
+                  <h3 className="text-white/90 text-xl font-heading font-bold mb-1">
+                    Bruno Shioso
+                  </h3>
+                  <p className="text-white/90 text-sm">
+                    Director General, Kenya Coast Guard Service
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Statistical Highlights */}
-            <div className="mt-12 grid grid-cols-2 gap-6 md:grid-cols-4">
-              {[
-                { number: "30+", label: "Years Experience" },
-                { number: "500+", label: "Security Operations" },
-                { number: "100+", label: "Consultations" },
-                { number: "50+", label: "Expert Testimonies" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="mb-2 text-4xl font-heading font-bold text-[#0A1A33]">
-                    {stat.number}
+            {/* Right Column: Bio Content + Logo Slider + Stats */}
+            <div className="flex flex-col gap-8">
+              {/* Bio Content */}
+              <div>
+                <h2 className="mb-4 text-[36px] font-heading font-bold text-[#1F2937]">
+                  About
+                </h2>
+                <p className="mb-6 text-[12px] leading-relaxed text-[#4a5568]">
+                  Mr. Bruno Isohi Shioso is a seasoned security and law enforcement professional with extensive experience in Kenya and internationally, having served in both the National Police Service (NPS) and the United Nations (UN) in various senior capacities.
+                </p>
+                <button
+                  onClick={() => setIsBioModalOpen(true)}
+                  className="inline-flex items-center text-[12px] font-medium transition-colors hover:underline w-fit mb-6 text-[#1F2937]"
+                >
+                  Read More
+                  <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
+                </button>
+              </div>
+
+              {/* Statistical Highlights - 2x2 Grid */}
+              <div className="grid grid-cols-2 gap-6">
+                {[
+                  { number: "30+", label: "Years Experience" },
+                  { number: "500+", label: "Security Operations" },
+                  { number: "100+", label: "Consultations" },
+                  { number: "50+", label: "Expert Testimonies" },
+                ].map((stat) => (
+                  <div key={stat.label} className="text-left">
+                    <div className="mb-2 text-3xl font-heading font-bold text-[#0A1A33]">
+                      {stat.number}
+                    </div>
+                    <div className="text-sm text-[#4A5768] leading-relaxed">{stat.label}</div>
                   </div>
-                  <div className="text-sm text-[#4A5768]">{stat.label}</div>
+                ))}
+              </div>
+
+              {/* Logo Slider Section */}
+              <div className="mt-8">
+                <div className="flex flex-wrap items-center gap-8">
+                  {[
+                    { src: "/logos/coast guards.jpg", alt: "Kenya Coast Guard Service" },
+                    { src: "/logos/DCI.jpg", alt: "Directorate of Criminal Investigations" },
+                    { src: "/logos/npslogo.jpg", alt: "National Police Service" },
+                    { src: "/logos/UN_emblem_blue.svg.png", alt: "United Nations" },
+                  ].map((logo, index) => (
+                    <div key={index} className="h-12 w-auto flex items-center">
+                      <Image
+                        src={logo.src}
+                        alt={logo.alt}
+                        width={120}
+                        height={48}
+                        className="h-12 w-auto object-contain"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Areas of Expertise Section */}
+      <section className="bg-[#f5f5f5] py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h3 className="mb-6 text-lg font-heading font-semibold text-[#1F2937]">
+            Areas of Expertise
+          </h3>
+              <div className="grid grid-cols-2 gap-4 text-[#F3F4F6]">
+                {[
+                  {
+                    title: "Criminal Investigation",
+                    icon: "fa-solid fa-magnifying-glass",
+                    image: "/images/criminal investigation.png",
+                    fallbackGradient: "from-[#0A1A33] to-[#1F2937]",
+                  },
+                  {
+                    title: "Maritime Security",
+                    icon: "fa-solid fa-ship",
+                    image: "/images/maritime security.png",
+                    fallbackGradient: "from-[#005B6E] to-[#007CFF]",
+                  },
+                  {
+                    title: "Police Leadership",
+                    icon: "fa-solid fa-user-tie",
+                    image: "/images/police leadership.png",
+                    fallbackGradient: "from-[#007CFF] to-[#005B6E]",
+                  },
+                  {
+                    title: "Transnational Organized Crime",
+                    icon: "fa-solid fa-globe",
+                    image: "/images/transnational organized crime.png",
+                    fallbackGradient: "from-[#1F2937] to-[#0A1A33]",
+                  },
+                ].map((area, index) => (
+                  <div
+                    key={index}
+                    className="group relative overflow-hidden rounded-lg border border-[#E5E7EB] transition-all hover:border-[#007CFF] hover:shadow-lg"
+                  >
+                    {/* Background Image with Fallback */}
+                    <div className={`relative h-48 w-full overflow-hidden bg-gradient-to-br ${area.fallbackGradient}`}>
+                      <Image
+                        src={area.image}
+                        alt={area.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      {/* Overlay for better text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20"></div>
+                      
+                      {/* Content */}
+                      <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                          <i className={`${area.icon} fa-subtitle text-2xl`}></i>
+                        </div>
+                        <h4 className="text-sm font-heading font-semibold leading-tight text-[#F3F4F6]">
+                          {area.title}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                ))}
           </div>
         </div>
       </section>
@@ -138,10 +308,10 @@ export default function Home() {
       <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
-            <h2 className="mb-4 text-3xl font-heading font-bold text-[#0A1A33] lg:text-4xl">
+            <h2 className="mb-4 text-2xl font-heading font-bold text-[#0A1A33] lg:text-3xl">
               Explore My Work
             </h2>
-            <p className="mx-auto max-w-2xl text-lg text-[#4A5768]">
+            <p className="mx-auto max-w-2xl text-sm text-[#4A5768]">
               Access articles, videos, publications, and book consultations
             </p>
           </div>
@@ -155,10 +325,10 @@ export default function Home() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
                 <i className="fa-regular fa-book fa-subtitle text-2xl"></i>
               </div>
-              <h3 className="mb-2 text-xl font-heading font-semibold text-[#1F2937]">
+              <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Articles
               </h3>
-              <p className="mb-4 text-sm text-[#4A5768]">
+              <p className="mb-4 text-xs text-[#4A5768]">
                 Read insights on security, criminal justice, and professional expertise
               </p>
               <span className="text-sm font-medium text-[#007CFF] group-hover:underline">
@@ -174,10 +344,10 @@ export default function Home() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
                 <i className="fa-regular fa-video fa-subtitle text-2xl"></i>
               </div>
-              <h3 className="mb-2 text-xl font-heading font-semibold text-[#1F2937]">
+              <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Videos
               </h3>
-              <p className="mb-4 text-sm text-[#4A5768]">
+              <p className="mb-4 text-xs text-[#4A5768]">
                 Watch interviews, podcasts, webinars, and expert presentations
               </p>
               <span className="text-sm font-medium text-[#007CFF] group-hover:underline">
@@ -193,10 +363,10 @@ export default function Home() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
                 <i className="fa-regular fa-trophy fa-subtitle text-2xl"></i>
               </div>
-              <h3 className="mb-2 text-xl font-heading font-semibold text-[#1F2937]">
+              <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Shop
               </h3>
-              <p className="mb-4 text-sm text-[#4A5768]">
+              <p className="mb-4 text-xs text-[#4A5768]">
                 Browse publications, reports, and professional resources
               </p>
               <span className="text-sm font-medium text-[#007CFF] group-hover:underline">
@@ -212,10 +382,10 @@ export default function Home() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
                 <i className="fa-regular fa-calendar fa-subtitle text-2xl"></i>
               </div>
-              <h3 className="mb-2 text-xl font-heading font-semibold text-[#1F2937]">
+              <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Consultation
               </h3>
-              <p className="mb-4 text-sm text-[#4A5768]">
+              <p className="mb-4 text-xs text-[#4A5768]">
                 Book a professional consultation for expert security advice
               </p>
               <span className="text-sm font-medium text-[#007CFF] group-hover:underline">
@@ -254,15 +424,55 @@ export default function Home() {
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#005B6E] shadow-md">
                   <i className={`${indicator.icon} fa-subtitle text-3xl`}></i>
                 </div>
-                <h3 className="mb-2 text-xl font-heading font-semibold text-[#1F2937]">
+                <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                   {indicator.title}
                 </h3>
-                <p className="text-sm text-[#4A5768]">{indicator.description}</p>
+                <p className="text-xs text-[#4A5768]">{indicator.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Bio Modal */}
+      {isBioModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setIsBioModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-3xl rounded-lg bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsBioModalOpen(false)}
+              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2D3748] shadow-lg transition-colors hover:bg-white hover:text-[#6b5cff]"
+              aria-label="Close modal"
+            >
+              <i className="fa-solid fa-xmark fa-text text-xl"></i>
+            </button>
+
+            {/* Modal Content */}
+            <div className="max-h-[90vh] overflow-y-auto p-8">
+              <h2 className="mb-6 text-[36px] font-heading font-bold" style={{ color: "#6b5cff" }}>
+                About
+              </h2>
+              <div className="space-y-4 text-[16px] leading-relaxed" style={{ color: "#4a5568" }}>
+                <p>
+                  Mr. Bruno Isohi Shioso is a seasoned security and law enforcement professional with extensive experience in Kenya and internationally, having served in both the National Police Service (NPS) and the United Nations (UN) in various senior capacities. His distinguished career includes roles as Police Instructor at the National Police Service Campus A – Kiganjo, Principal Assistant of the Directorate of Criminal Investigations (DCI), Deputy Director of the Banking Fraud Investigation Unit, County Criminal Investigations Officer (CCIO), National Police Service Spokesperson, and Commandant of the National Police Service Campus A – Kiganjo Police College.
+                </p>
+                <p>
+                  Mr. Shioso holds a Master of Science degree in Criminology (Police Leadership and Management) from the University of Leicester, UK, and is currently the Director General of the Kenya Coast Guard Service, where he provides strategic leadership in enforcing maritime security, patrolling Kenya&apos;s territorial waters, preventing unlawful fishing, piracy, human and drug trafficking, smuggling, and environmental damage.
+                </p>
+                <p>
+                  He is also a published author, having contributed articles to national newspapers and authored books, including Unreported Cases.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

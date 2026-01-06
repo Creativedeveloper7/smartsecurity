@@ -69,15 +69,15 @@ h1, h2, h3 {
 }
 
 h1 {
-  font-size: 48px;
-}
-
-h2 {
   font-size: 36px;
 }
 
-h3 {
+h2 {
   font-size: 28px;
+}
+
+h3 {
+  font-size: 22px;
   color: var(--dark-charcoal);
 }
 
@@ -89,21 +89,22 @@ h4, h5, h6 {
 }
 
 h4 {
-  font-size: 24px;
-}
-
-h5 {
   font-size: 20px;
 }
 
-h6 {
+h5 {
   font-size: 18px;
+}
+
+h6 {
+  font-size: 16px;
 }
 
 /* Body / regular content */
 p, span, li, a, label, input, textarea {
   font-weight: 400; /* Regular */
   line-height: 1.6;
+  font-size: 14px;
 }
 
 /* Buttons & UI text */
@@ -111,13 +112,33 @@ button, .btn {
   font-weight: 500;
 }
 
-a {
-  color: var(--cool-azure);
-  transition: all 0.2s ease;
-}
+/* Global Link Styles */
+@layer base {
+  /* Base link styles - applies to all <a> elements */
+  a {
+    color: #F3F4F6;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
 
-a:hover {
-  text-decoration: underline;
+  /* Hover state - slightly lighter for feedback */
+  a:hover {
+    color: #FFFFFF;
+    text-decoration: none;
+  }
+
+  /* Focus state - remove default outline */
+  a:focus {
+    outline: none;
+  }
+
+  /* Focus-visible state - keyboard accessibility */
+  a:focus-visible {
+    outline: 2px solid #007CFF;
+    outline-offset: 2px;
+    color: #FFFFFF;
+    text-decoration: none;
+  }
 }
 
 /* Font Awesome Utility Classes */
@@ -142,4 +163,66 @@ a:hover {
   text-rendering: auto;
   line-height: 1;
   display: inline-block;
+}
+
+/* Article Modal Prose Styling */
+.prose {
+  color: #2D3748;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.prose h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+  letter-spacing: -0.01em;
+}
+
+.prose h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.prose ul,
+.prose ol {
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+  font-size: 14px;
+}
+
+.prose ul li {
+  list-style-type: disc;
+}
+
+.prose ol li {
+  list-style-type: decimal;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.prose a {
+  color: #007CFF;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #0066CC;
 }

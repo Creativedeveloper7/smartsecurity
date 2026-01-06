@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  provider = "prisma-client-js"
 }
 
 // Add seed script configuration
@@ -11,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // Users & Authentication
@@ -217,6 +217,24 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+}
+
+// Courses
+model Course {
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  description       String   @db.Text
+  expandedDescription String @db.Text
+  keyOutcomes       String[] // Array of outcome strings
+  idealAudience     String   @db.Text
+  deliveryFormat    String
+  duration          String
+  price             String   // "On request" or "From $X per cohort"
+  image             String?  // Featured image URL
+  published         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 // Site Settings
