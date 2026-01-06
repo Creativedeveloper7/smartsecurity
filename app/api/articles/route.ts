@@ -57,14 +57,23 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error("Error fetching articles:", error);
-    // Return more detailed error in development, generic in production
-    const errorMessage = process.env.NODE_ENV === "development" 
-      ? error.message || "Failed to fetch articles"
-      : "Failed to fetch articles";
-    return NextResponse.json(
-      { error: errorMessage, details: process.env.NODE_ENV === "development" ? String(error) : undefined },
-      { status: 500 }
-    );
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+    });
+    
+    // Return empty array instead of 500 error to prevent frontend breakage
+    // This allows the site to work even if database is temporarily unavailable
+    return NextResponse.json({
+      articles: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+      },
+    });
   }
 }
 

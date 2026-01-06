@@ -27,14 +27,14 @@ export async function GET(request: Request) {
     return NextResponse.json(categories);
   } catch (error: any) {
     console.error("Error fetching categories:", error);
-    // Return more detailed error in development, generic in production
-    const errorMessage = process.env.NODE_ENV === "development" 
-      ? error.message || "Failed to fetch categories"
-      : "Failed to fetch categories";
-    return NextResponse.json(
-      { error: errorMessage, details: process.env.NODE_ENV === "development" ? String(error) : undefined },
-      { status: 500 }
-    );
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+    });
+    
+    // Return empty array instead of 500 error to prevent frontend breakage
+    return NextResponse.json([]);
   }
 }
 

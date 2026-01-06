@@ -7,7 +7,7 @@ declare global {
 
 // Ensure DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL environment variable is not set");
+  console.error("⚠️ DATABASE_URL environment variable is not set");
   // Don't throw in production to allow graceful degradation
   if (process.env.NODE_ENV === "development") {
     throw new Error("DATABASE_URL environment variable is not set");
@@ -16,8 +16,8 @@ if (!process.env.DATABASE_URL) {
 
 const createPrismaClient = () => {
   if (!process.env.DATABASE_URL) {
-    // Return a mock client in production if DATABASE_URL is missing
-    // This prevents the app from crashing but queries will fail
+    console.error("⚠️ DATABASE_URL is missing. Database queries will fail.");
+    // Return a client that will fail gracefully
     return new PrismaClient({
       datasources: {
         db: {
@@ -37,5 +37,12 @@ export const prisma =
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
+}
+
+// Test connection on startup (non-blocking)
+if (process.env.DATABASE_URL) {
+  prisma.$connect().catch((error) => {
+    console.error("⚠️ Failed to connect to database:", error.message);
+  });
 }
 
