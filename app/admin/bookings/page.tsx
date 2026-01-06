@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 async function getBookings() {
   try {
     const response = await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/bookings`, {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 
 const courses = {
@@ -42,7 +42,7 @@ const courses = {
   },
 };
 
-export default function CourseBookingPage() {
+function CourseBookingForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const courseId = searchParams.get("courseId");
@@ -355,6 +355,21 @@ export default function CourseBookingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CourseBookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center">
+          <i className="fa-solid fa-spinner fa-title text-3xl text-[#007CFF] animate-spin mb-4"></i>
+          <p className="text-sm text-[#4A5768]">Loading booking form...</p>
+        </div>
+      </div>
+    }>
+      <CourseBookingForm />
+    </Suspense>
   );
 }
 
