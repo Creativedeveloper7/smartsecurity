@@ -4,12 +4,23 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
+  const category = searchParams.get("category");
+  const search = searchParams.get("search");
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "10");
+
+  console.log("📥 [GET /api/articles]", {
+    url: requestUrl.pathname + requestUrl.search,
+    category,
+    search,
+    page,
+    limit,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
 
     const where: any = {
       published: true,
@@ -46,6 +57,13 @@ export async function GET(request: Request) {
       prisma.article.count({ where }),
     ]);
 
+    console.log("✅ [GET /api/articles] Success", {
+      articlesCount: articles.length,
+      total,
+      page,
+      limit,
+    });
+
     return NextResponse.json({
       articles,
       pagination: {
@@ -56,17 +74,26 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error("Error fetching articles:", error);
-    console.error("Error details:", {
+    console.error("❌ [GET /api/articles] Error:", {
       message: error.message,
       code: error.code,
       name: error.name,
+      url: requestUrl.pathname + requestUrl.search,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
     });
     
     // Check if it's a connection error
     if (error.code === "P1001" || error.message?.includes("Can't reach database server")) {
-      console.error("❌ Database connection failed. Check DATABASE_URL in Vercel environment variables.");
+      console.error("🔴 [GET /api/articles] Database connection failed:", {
+        errorCode: error.code,
+        errorMessage: error.message,
+        suggestion: "Check DATABASE_URL in Vercel environment variables",
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+        databaseUrlPrefix: process.env.DATABASE_URL?.substring(0, 20) + "...",
+      });
       return NextResponse.json(
         { 
           error: "Database connection failed",
@@ -90,9 +117,22 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  console.log("📥 [POST /api/articles] Request received", {
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const body = await request.json();
     const { title, slug, excerpt, content, featuredImage, categories, published } = body;
+
+    console.log("📥 [POST /api/articles] Request data:", {
+      title,
+      slug,
+      hasContent: !!content,
+      hasFeaturedImage: !!featuredImage,
+      categoriesCount: categories?.length || 0,
+      published,
+    });
 
     if (!title || !slug || !content) {
       return NextResponse.json(
@@ -121,12 +161,26 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("✅ [POST /api/articles] Article created successfully", {
+      articleId: article.id,
+      slug: article.slug,
+      title: article.title,
+    });
+
     return NextResponse.json(article, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating article:", error);
+    console.error("❌ [POST /api/articles] Error creating article:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
+    });
     
     // Handle unique constraint violation (duplicate slug)
     if (error.code === "P2002") {
+      console.warn("⚠️ [POST /api/articles] Duplicate slug detected");
       return NextResponse.json(
         { error: "An article with this slug already exists" },
         { status: 409 }

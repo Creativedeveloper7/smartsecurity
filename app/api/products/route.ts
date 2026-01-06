@@ -4,10 +4,19 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
+  const category = searchParams.get("category");
+  const search = searchParams.get("search");
+
+  console.log("📥 [GET /api/products]", {
+    url: requestUrl.pathname + requestUrl.search,
+    category,
+    search,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
 
     const where: any = {};
 
@@ -29,13 +38,21 @@ export async function GET(request: Request) {
       },
     });
 
+    console.log("✅ [GET /api/products] Success", {
+      productsCount: products.length,
+    });
+
     return NextResponse.json({ products });
   } catch (error: any) {
-    console.error("Error fetching products:", error);
-    console.error("Error details:", {
+    console.error("❌ [GET /api/products] Error:", {
       message: error.message,
       code: error.code,
       name: error.name,
+      url: requestUrl.pathname + requestUrl.search,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
     });
     
     // Return empty array instead of 500 error to prevent frontend breakage
@@ -44,9 +61,23 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  console.log("📥 [POST /api/products] Request received", {
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const body = await request.json();
     const { name, slug, description, price, images, category, stock, isDigital } = body;
+
+    console.log("📥 [POST /api/products] Request data:", {
+      name,
+      slug,
+      price,
+      imagesCount: images?.length || 0,
+      category,
+      stock,
+      isDigital,
+    });
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -82,12 +113,26 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("✅ [POST /api/products] Product created successfully", {
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+    });
+
     return NextResponse.json(product, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating product:", error);
+    console.error("❌ [POST /api/products] Error creating product:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
+    });
     
     // Handle unique constraint violation (duplicate slug)
     if (error.code === "P2002") {
+      console.warn("⚠️ [POST /api/products] Duplicate slug detected");
       return NextResponse.json(
         { error: "A product with this slug already exists" },
         { status: 409 }

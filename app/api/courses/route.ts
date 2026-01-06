@@ -4,10 +4,19 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
+  const search = searchParams.get("search");
+  const published = searchParams.get("published");
+
+  console.log("📥 [GET /api/courses]", {
+    url: requestUrl.pathname + requestUrl.search,
+    search,
+    published,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
-    const published = searchParams.get("published");
 
     const where: any = {};
 
@@ -31,14 +40,22 @@ export async function GET(request: Request) {
       },
     });
 
+    console.log("✅ [GET /api/courses] Success", {
+      coursesCount: courses.length,
+    });
+
     return NextResponse.json({ courses });
   } catch (error: any) {
-    console.error("Error fetching courses:", error);
-    console.error("Error details:", {
+    console.error("❌ [GET /api/courses] Error:", {
       message: error.message,
       code: error.code,
+      name: error.name,
       meta: error.meta,
-      stack: error.stack,
+      url: requestUrl.pathname + requestUrl.search,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
     });
     
     // If table doesn't exist yet, return empty array
@@ -65,6 +82,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  console.log("📥 [POST /api/courses] Request received", {
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const body = await request.json();
     const {
@@ -80,6 +101,14 @@ export async function POST(request: Request) {
       image,
       published,
     } = body;
+
+    console.log("📥 [POST /api/courses] Request data:", {
+      title,
+      slug,
+      hasDescription: !!description,
+      keyOutcomesCount: keyOutcomes?.length || 0,
+      published,
+    });
 
     if (!title || !slug) {
       return NextResponse.json(
@@ -112,12 +141,26 @@ export async function POST(request: Request) {
       },
     });
 
+    console.log("✅ [POST /api/courses] Course created successfully", {
+      courseId: course.id,
+      slug: course.slug,
+      title: course.title,
+    });
+
     return NextResponse.json(course, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating course:", error);
+    console.error("❌ [POST /api/courses] Error creating course:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
+    });
 
     // Handle unique constraint violation (duplicate slug)
     if (error.code === "P2002") {
+      console.warn("⚠️ [POST /api/courses] Duplicate slug detected");
       return NextResponse.json(
         { error: "A course with this slug already exists" },
         { status: 409 }
