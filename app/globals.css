@@ -1,6 +1,9 @@
 /* Import Inter font (Regular, Medium, SemiBold) - Must be first */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
+/* Import Playfair Display font for headings */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
+
 @import "tailwindcss";
 
 :root {
@@ -29,6 +32,7 @@
   
   /* Root font setup */
   --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Playfair Display', serif;
 }
 
 @theme inline {
@@ -46,7 +50,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-primary);
-  --font-heading: var(--font-primary);
+  --font-heading: 'Playfair Display', serif;
 }
 
 /* Apply globally */
@@ -63,6 +67,7 @@ body {
 
 /* Headings – Bold / Strong emphasis */
 h1, h2, h3 {
+  font-family: var(--font-heading);
   font-weight: 600; /* SemiBold */
   letter-spacing: -0.02em;
   color: var(--midnight-navy);
@@ -83,6 +88,7 @@ h3 {
 
 /* Sub-headings */
 h4, h5, h6 {
+  font-family: var(--font-heading);
   font-weight: 500; /* Medium */
   letter-spacing: -0.01em;
   color: var(--dark-charcoal);

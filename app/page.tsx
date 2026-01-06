@@ -49,29 +49,57 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-white py-20 lg:py-32">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+      <section className="relative bg-white py-20 lg:py-32 overflow-hidden">
+        {/* Full-width Background Image Carousel */}
+        <div className="absolute inset-0">
+          {galleryImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                index === currentImageIndex ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Image
+                src={image}
+                alt={`Gallery image ${index + 1}`}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </div>
+          ))}
+          
+          {/* Gradient Overlay - Fades from left (darker) to right (lighter) */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0A1A33]/90 via-[#0A1A33]/60 to-transparent"></div>
+        </div>
+
+        {/* Content Overlay */}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 z-10">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 min-h-[500px] lg:min-h-[600px]">
             {/* Left: Text Content */}
             <div className="flex flex-col justify-center">
               {/* Logo */}
               <div className="mb-6">
-        <Image
+                <img
                   src="/smart.png"
                   alt="SmartSecurity Consult"
-                  width={200}
-                  height={70}
                   className="h-auto w-auto max-w-[200px]"
-          priority
-        />
+                  style={{ 
+                    background: 'transparent',
+                    filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 12px rgba(0, 124, 255, 0.6)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4))',
+                  }}
+                />
               </div>
-              <h1 className="mb-6 text-2xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-3xl lg:text-4xl">
+              <h1 
+                className="mb-6 text-3xl font-heading font-bold leading-tight text-white sm:text-4xl lg:text-5xl"
+                style={{ color: 'white' }}
+              >
                 SmartSecurity Consult
-          </h1>
-              <p className="mb-4 text-base text-[#2D3748]">
+              </h1>
+              <p className="mb-4 text-base text-white/90 drop-shadow-md">
                 Expert Security Services in Kenya
               </p>
-              <p className="mb-8 text-sm leading-relaxed text-[#4A5768]">
+              <p className="mb-8 text-sm leading-relaxed text-white/80 drop-shadow-md">
                 With extensive experience in high-level policing, security detail, intelligence,
                 criminal handling, and consultancy. Providing authoritative security solutions
                 for government and private sector clients.
@@ -86,7 +114,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/bookings"
-                  className="inline-flex items-center justify-center rounded-lg border-2 border-[#005B6E] bg-transparent px-8 py-3 text-base font-medium text-[#005B6E] transition-all hover:bg-[#005B6E] hover:text-white"
+                  className="inline-flex items-center justify-center rounded-lg border-2 border-white bg-transparent px-8 py-3 text-base font-medium text-white transition-all hover:bg-white/10 hover:border-white/80"
                 >
                   Book Consultation
                   <i className="fa-regular fa-calendar fa-text ml-2"></i>
@@ -94,110 +122,107 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Professional Portrait Carousel */}
-            <div className="flex items-center justify-center">
-              <div className="relative h-[400px] w-full max-w-md overflow-hidden rounded-lg shadow-2xl bg-[#F3F4F6]">
-                {/* Carousel Images */}
-                {galleryImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`absolute inset-0 transition-opacity duration-500 ${
-                      index === currentImageIndex ? "opacity-100" : "opacity-0"
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={`Gallery image ${index + 1}`}
-                      fill
-                      className="object-contain"
-                      priority={index === 0}
-                    />
-                  </div>
-                ))}
-
-                {/* Navigation Arrows */}
-                <button
-                  onClick={goToPrevious}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white transition-all hover:text-[#F3F4F6]"
-                  aria-label="Previous image"
-                >
-                  <i className="fa-solid fa-chevron-left fa-text text-2xl"></i>
-                </button>
-                <button
-                  onClick={goToNext}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full text-white transition-all hover:text-[#F3F4F6]"
-                  aria-label="Next image"
-                >
-                  <i className="fa-solid fa-chevron-right fa-text text-2xl"></i>
-                </button>
-
-                {/* Dots Indicator */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {galleryImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`h-2 rounded-full transition-all ${
-                        index === currentImageIndex
-                          ? "w-8 bg-white"
-                          : "w-2 bg-white/50 hover:bg-white/75"
-                      }`}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            {/* Right: Empty space for layout balance */}
+            <div className="hidden lg:block"></div>
           </div>
+        </div>
+
+        {/* Navigation Arrows - Positioned on the right side */}
+        <button
+          onClick={goToPrevious}
+          className="absolute right-20 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white transition-all hover:bg-black/50 hover:scale-110"
+          aria-label="Previous image"
+        >
+          <i className="fa-solid fa-chevron-left fa-text text-xl"></i>
+        </button>
+        <button
+          onClick={goToNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white transition-all hover:bg-black/50 hover:scale-110"
+          aria-label="Next image"
+        >
+          <i className="fa-solid fa-chevron-right fa-text text-xl"></i>
+        </button>
+
+        {/* Dots Indicator - Positioned at bottom right */}
+        <div className="absolute bottom-8 right-1/2 translate-x-1/2 lg:translate-x-0 lg:right-8 z-20 flex gap-2">
+          {galleryImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === currentImageIndex
+                  ? "w-8 bg-white"
+                  : "w-2 bg-white/50 hover:bg-white/75"
+              }`}
+              aria-label={`Go to image ${index + 1}`}
+            />
+          ))}
         </div>
       </section>
 
       {/* Biography Section */}
-      <section className="bg-[#f5f5f5]" style={{ padding: "80px" }}>
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-[60px] lg:grid-cols-[400px_1fr]">
+      <section className="relative bg-gradient-to-br from-[#F3F4F6] via-white to-[#F3F4F6] py-20 lg:py-32 overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#007CFF]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#005B6E]/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-[450px_1fr] lg:gap-16">
             {/* Left Column: Portrait */}
-            <div className="relative">
-              <div className="relative h-[400px] w-[400px] overflow-hidden shadow-lg" style={{ borderLeft: "8px solid rgb(255, 255, 255)" }}>
+            <div className="relative group">
+              <div className="relative h-[450px] w-full max-w-[450px] mx-auto lg:mx-0 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-[#007CFF]/20 group-hover:shadow-2xl">
+                {/* Decorative Border */}
+                <div className="absolute inset-0 rounded-2xl border-4 border-white/50 group-hover:border-[#007CFF]/30 transition-colors duration-500 z-10"></div>
+                <div className="absolute -left-2 top-8 w-4 h-32 bg-gradient-to-b from-[#007CFF] to-[#005B6E] rounded-full opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
+                
                 <Image
                   src="/gallery/Swearing.jpeg"
                   alt="Bruno Isohi Shioso"
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
                   priority
                 />
                 
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/10 to-transparent p-6">
-                  <h3 className="text-white/90 text-xl font-heading font-bold mb-1">
-                    Bruno Shioso
-                  </h3>
-                  <p className="text-white/90 text-sm">
-                    Director General, Kenya Coast Guard Service
-                  </p>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                
+                {/* Name Badge */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
+                    <h3 className="text-white text-2xl font-heading font-bold mb-1 drop-shadow-lg">
+                      Bruno Shioso
+                    </h3>
+                    <p className="text-white/90 text-sm font-medium">
+                      Director General, Kenya Coast Guard Service
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Bio Content + Logo Slider + Stats */}
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-10">
               {/* Bio Content */}
-              <div>
-                <h2 className="mb-4 text-[36px] font-heading font-bold text-[#1F2937]">
-                  About
-                </h2>
-                <p className="mb-6 text-[12px] leading-relaxed text-[#4a5568]">
+              <div className="space-y-6">
+                <div className="inline-block">
+                  <span className="text-sm font-semibold text-[#007CFF] uppercase tracking-wider mb-2 block">About</span>
+                  <h2 className="text-4xl lg:text-5xl font-heading font-bold text-[#0A1A33] leading-tight">
+                    Distinguished Security Expert
+                  </h2>
+                </div>
+                <p className="text-base leading-relaxed text-[#2D3748] max-w-2xl">
                   Mr. Bruno Isohi Shioso is a seasoned security and law enforcement professional with extensive experience in Kenya and internationally, having served in both the National Police Service (NPS) and the United Nations (UN) in various senior capacities.
                 </p>
                 <button
                   onClick={() => setIsBioModalOpen(true)}
-                  className="inline-flex items-center text-[12px] font-medium transition-colors hover:underline w-fit mb-6 text-[#1F2937]"
+                  className="group inline-flex items-center gap-2 px-6 py-3 bg-[#007CFF] text-white font-medium rounded-lg shadow-lg hover:bg-[#0066CC] hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
-                  Read More
-                  <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
+                  <span>Read More</span>
+                  <i className="fa-solid fa-arrow-right fa-text transition-transform duration-300 group-hover:translate-x-1"></i>
                 </button>
               </div>
 
-              {/* Statistical Highlights - 2x2 Grid */}
+              {/* Statistical Highlights - Simple */}
               <div className="grid grid-cols-2 gap-6">
                 {[
                   { number: "30+", label: "Years Experience" },
@@ -214,22 +239,26 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Logo Slider Section */}
-              <div className="mt-8">
-                <div className="flex flex-wrap items-center gap-8">
+              {/* Logo Slider Section - Enhanced */}
+              <div className="mt-4">
+                <p className="text-sm font-medium text-[#4A5768] mb-4">Trusted by Leading Organizations</p>
+                <div className="flex flex-wrap items-center gap-8 p-6 bg-white/60 backdrop-blur-sm rounded-xl border border-[#E5E7EB]">
                   {[
                     { src: "/logos/coast guards.jpg", alt: "Kenya Coast Guard Service" },
                     { src: "/logos/DCI.jpg", alt: "Directorate of Criminal Investigations" },
                     { src: "/logos/npslogo.jpg", alt: "National Police Service" },
                     { src: "/logos/UN_emblem_blue.svg.png", alt: "United Nations" },
                   ].map((logo, index) => (
-                    <div key={index} className="h-12 w-auto flex items-center">
+                    <div 
+                      key={index} 
+                      className="h-14 w-auto flex items-center opacity-70 hover:opacity-100 transition-opacity duration-300 grayscale hover:grayscale-0 transition-all"
+                    >
                       <Image
                         src={logo.src}
                         alt={logo.alt}
-                        width={120}
-                        height={48}
-                        className="h-12 w-auto object-contain"
+                        width={140}
+                        height={56}
+                        className="h-14 w-auto object-contain"
                       />
                     </div>
                   ))}

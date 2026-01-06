@@ -30,13 +30,28 @@ export default function VideosPage() {
     const fetchVideos = async () => {
       try {
         setLoading(true);
+        setError("");
         const response = await fetch("/api/videos");
-        if (!response.ok) throw new Error("Failed to fetch videos");
         const data = await response.json();
-        setVideos(data.videos || []);
+        
+        // Handle both success and error responses gracefully
+        if (data.error) {
+          console.warn("API returned error:", data.error);
+          setVideos([]);
+          // Don't set error state for database issues - just show empty state
+          if (data.error !== "Database connection failed") {
+            setError(data.message || "Failed to load videos");
+          }
+        } else {
+          setVideos(data.videos || []);
+        }
       } catch (err: any) {
-        setError(err.message || "Failed to load videos");
         console.error("Error fetching videos:", err);
+        setVideos([]);
+        // Only show error for non-network issues
+        if (!err.message?.includes("fetch")) {
+          setError(err.message || "Failed to load videos");
+        }
       } finally {
         setLoading(false);
       }

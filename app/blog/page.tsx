@@ -55,19 +55,40 @@ export default function BlogPage() {
           fetch("/api/categories", { signal: controller.signal }),
         ]);
 
-        if (!articlesRes.ok) throw new Error("Failed to fetch articles");
-        if (!categoriesRes.ok) throw new Error("Failed to fetch categories");
-
         const articlesData = await articlesRes.json();
         const categoriesData = await categoriesRes.json();
 
-        setArticles(articlesData.articles || []);
-        setPagination(articlesData.pagination || { page: 1, limit: 9, totalPages: 1, total: 0 });
-        setCategories([{ name: "All", slug: "all" }, ...(categoriesData || [])]);
+        // Handle errors gracefully
+        if (articlesData.error) {
+          console.warn("API returned error:", articlesData.error);
+          setArticles([]);
+          setPagination({ page: 1, limit: 9, totalPages: 1, total: 0 });
+          // Don't set error state for database issues - just show empty state
+          if (articlesData.error !== "Database connection failed") {
+            setError(articlesData.message || "Failed to load articles");
+          }
+        } else {
+          setArticles(articlesData.articles || []);
+          setPagination(articlesData.pagination || { page: 1, limit: 9, totalPages: 1, total: 0 });
+        }
+
+        // Handle categories - if error, just use empty array
+        if (categoriesData.error) {
+          console.warn("Categories API returned error:", categoriesData.error);
+          setCategories([{ name: "All", slug: "all" }]);
+        } else {
+          setCategories([{ name: "All", slug: "all" }, ...(categoriesData || [])]);
+        }
       } catch (err: any) {
         if (err.name === "AbortError") return;
-        setError(err.message || "Failed to load articles");
         console.error("Error fetching data:", err);
+        setArticles([]);
+        setPagination({ page: 1, limit: 9, totalPages: 1, total: 0 });
+        setCategories([{ name: "All", slug: "all" }]);
+        // Only show error for non-network issues
+        if (!err.message?.includes("fetch")) {
+          setError(err.message || "Failed to load articles");
+        }
       } finally {
         setLoading(false);
       }
