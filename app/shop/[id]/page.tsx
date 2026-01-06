@@ -25,9 +25,10 @@ const mockProduct = {
   isDigital: false,
 };
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   // In production, fetch product by id from database
-  if (params.id !== mockProduct.id) {
+  if (id !== mockProduct.id) {
     notFound();
   }
 

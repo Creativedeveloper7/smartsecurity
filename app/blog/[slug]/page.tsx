@@ -33,9 +33,10 @@ const mockArticle = {
   metaDescription: "An in-depth analysis of contemporary security threats in Kenya",
 };
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   // In production, fetch article by slug from database
-  if (params.slug !== mockArticle.slug) {
+  if (slug !== mockArticle.slug) {
     notFound();
   }
 
