@@ -65,8 +65,11 @@ export function CommentSection({ articleSlug }: CommentSectionProps) {
         throw new Error(data.error || "Failed to submit comment");
       }
 
-      // Add new comment to the list
-      setComments([data, ...comments]);
+      // Refresh comments list to show updated data
+      const refreshResponse = await fetch(`/api/articles/${articleSlug}/comments`);
+      const refreshData = await refreshResponse.json();
+      setComments(refreshData.comments || []);
+      
       setFormData({ name: "", comment: "" });
       setSuccess(true);
       
@@ -139,7 +142,7 @@ export function CommentSection({ articleSlug }: CommentSectionProps) {
           )}
           {success && (
             <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-600">
-              Comment submitted successfully!
+              Comment posted successfully!
             </div>
           )}
           <button

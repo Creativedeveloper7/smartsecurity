@@ -24,18 +24,39 @@ export default async function AdminDashboard() {
     totalBookings: 0,
     totalRevenue: 0,
     totalArticles: 0,
+    publishedArticles: 0,
     totalVideos: 0,
     totalProducts: 0,
     totalOrders: 0,
+    totalCourses: 0,
+    publishedCourses: 0,
+    totalComments: 0,
+    totalUsers: 0,
   };
 
   try {
-    const [bookings, articles, videos, products, orders] = await Promise.all([
+    const [
+      bookings,
+      articles,
+      publishedArticles,
+      videos,
+      products,
+      orders,
+      courses,
+      publishedCourses,
+      comments,
+      users,
+    ] = await Promise.all([
       prisma.booking.count().catch(() => 0),
       prisma.article.count().catch(() => 0),
+      prisma.article.count({ where: { published: true } }).catch(() => 0),
       prisma.video.count().catch(() => 0),
       prisma.product.count().catch(() => 0),
       prisma.order.count().catch(() => 0),
+      prisma.course.count().catch(() => 0),
+      prisma.course.count({ where: { published: true } }).catch(() => 0),
+      prisma.comment.count().catch(() => 0),
+      prisma.user.count().catch(() => 0),
     ]);
 
     const paidBookings = await prisma.booking.findMany({
@@ -47,9 +68,14 @@ export default async function AdminDashboard() {
       totalBookings: bookings,
       totalRevenue: paidBookings.reduce((sum, b) => sum + Number(b.price || 0), 0),
       totalArticles: articles,
+      publishedArticles: publishedArticles,
       totalVideos: videos,
       totalProducts: products,
       totalOrders: orders,
+      totalCourses: courses,
+      publishedCourses: publishedCourses,
+      totalComments: comments,
+      totalUsers: users,
     };
   } catch (error) {
     console.error("Error fetching stats:", error);
@@ -80,6 +106,68 @@ export default async function AdminDashboard() {
           <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Articles</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalArticles}
+                </p>
+                <p className="mt-1 text-xs text-[#4A5768]">
+                  {stats.publishedArticles} published
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-book fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Videos</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalVideos}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-video fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Courses</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalCourses}
+                </p>
+                <p className="mt-1 text-xs text-[#4A5768]">
+                  {stats.publishedCourses} published
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-graduation-cap fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Products</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalProducts}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-bag-shopping fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Bookings</p>
                 <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
                   {stats.totalBookings}
@@ -94,6 +182,34 @@ export default async function AdminDashboard() {
           <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Orders</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalOrders}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-shopping-cart fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#4A5768]">Total Comments</p>
+                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
+                  {stats.totalComments}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
+                <i className="fa-regular fa-comments fa-subtitle text-2xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Revenue</p>
                 <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
                   KSh {stats.totalRevenue.toLocaleString()}
@@ -101,34 +217,6 @@ export default async function AdminDashboard() {
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
                 <i className="fa-regular fa-dollar-sign fa-subtitle text-2xl"></i>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-[#4A5768]">Articles</p>
-                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
-                  {stats.totalArticles}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
-                <i className="fa-regular fa-book fa-subtitle text-2xl"></i>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-[#4A5768]">Videos</p>
-                <p className="mt-2 text-2xl font-bold text-[#0A1A33]">
-                  {stats.totalVideos}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E]">
-                <i className="fa-regular fa-video fa-subtitle text-2xl"></i>
               </div>
             </div>
           </div>

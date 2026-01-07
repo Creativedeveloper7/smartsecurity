@@ -37,7 +37,27 @@ export async function GET(
 
     return NextResponse.json({ comments });
   } catch (error: any) {
-    console.error("Error fetching comments:", error);
+    console.error("❌ [GET /api/articles/[slug]/comments] Error fetching comments:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+    
+    // Check if it's a Prisma client issue (model not found)
+    if (error.message?.includes("comment") || error.message?.includes("Comment") || error.code === "P2001") {
+      console.warn("⚠️ Prisma client needs to be regenerated. Please run: npx prisma generate");
+      return NextResponse.json({ comments: [] }, { status: 200 });
+    }
+    
+    // Check if it's a database connection error
+    if (error.code === "P1001" || error.message?.includes("Can't reach database server")) {
+      console.error("🔴 Database connection failed");
+      return NextResponse.json({ comments: [] }, { status: 200 });
+    }
+    
     return NextResponse.json(
       { error: "Failed to fetch comments", comments: [] },
       { status: 500 }
@@ -90,21 +110,52 @@ export async function POST(
       );
     }
 
-    // Create comment
+    // Create comment (approved automatically)
     const newComment = await prisma.comment.create({
       data: {
         articleId: article.id,
         name: name.trim(),
         comment: comment.trim(),
-        approved: true, // Auto-approve for now, can be changed to false for moderation
+        approved: true, // Comments appear automatically
       },
     });
 
     return NextResponse.json(newComment, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating comment:", error);
+    console.error("❌ [POST /api/articles/[slug]/comments] Error creating comment:", {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      meta: error.meta,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      fullError: process.env.NODE_ENV === "development" ? error : undefined,
+    });
+    
+    // Check if it's a Prisma client issue (model not found)
+    if (error.message?.includes("comment") || error.message?.includes("Comment") || error.code === "P2001") {
+      console.warn("⚠️ Prisma client needs to be regenerated. Please run: npx prisma generate");
+      return NextResponse.json(
+        { error: "Comment model not found. Please regenerate Prisma client." },
+        { status: 500 }
+      );
+    }
+    
+    // Check if it's a database connection error
+    if (error.code === "P1001" || error.message?.includes("Can't reach database server")) {
+      console.error("🔴 Database connection failed");
+      return NextResponse.json(
+        { error: "Database connection failed. Please check your database configuration." },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || "Failed to create comment" },
+      { 
+        error: error.message || "Failed to create comment",
+        details: process.env.NODE_ENV === "development" ? error.message : undefined
+      },
       { status: 500 }
     );
   }

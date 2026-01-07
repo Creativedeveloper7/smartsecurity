@@ -102,7 +102,7 @@ model Comment {
   articleId String
   name      String
   comment   String   @db.Text
-  approved  Boolean  @default(true)
+  approved  Boolean  @default(true) // Comments are approved automatically
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

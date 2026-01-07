@@ -130,6 +130,8 @@ export async function POST(request: Request) {
       slug,
       hasContent: !!content,
       hasFeaturedImage: !!featuredImage,
+      featuredImage: featuredImage || "(empty)",
+      featuredImageLength: featuredImage?.length || 0,
       categoriesCount: categories?.length || 0,
       published,
     });
@@ -147,7 +149,7 @@ export async function POST(request: Request) {
         slug,
         excerpt: excerpt || null,
         content,
-        featuredImage: featuredImage || null,
+        featuredImage: featuredImage && featuredImage.trim() !== "" ? featuredImage.trim() : null,
         published: published || false,
         publishedAt: published ? new Date() : null,
         categories: {
@@ -165,6 +167,7 @@ export async function POST(request: Request) {
       articleId: article.id,
       slug: article.slug,
       title: article.title,
+      featuredImage: article.featuredImage || "(not set)",
     });
 
     return NextResponse.json(article, { status: 201 });

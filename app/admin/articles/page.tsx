@@ -10,6 +10,11 @@ async function getArticles() {
     const articles = await prisma.article.findMany({
       include: {
         categories: true,
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
       },
       orderBy: {
         publishedAt: "desc",
@@ -88,6 +93,9 @@ export default async function AdminArticlesPage() {
                     Published
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#4A5768] uppercase tracking-wider">
+                    Comments
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#4A5768] uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#4A5768] uppercase tracking-wider">
@@ -98,7 +106,7 @@ export default async function AdminArticlesPage() {
               <tbody className="bg-white divide-y divide-[#E5E7EB]">
                 {articles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#4A5768]">
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-[#4A5768]">
                       No articles found. <Link href="/admin/articles/new" className="text-[#007CFF] hover:underline">Create one</Link>
                     </td>
                   </tr>
@@ -136,6 +144,14 @@ export default async function AdminArticlesPage() {
                           : "Draft"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <Link
+                          href={`/admin/articles/${article.slug}/comments`}
+                          className="text-sm text-[#007CFF] hover:text-[#0066CC] transition-colors font-medium"
+                        >
+                          {article._count?.comments || 0} comments
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             article.published
@@ -148,6 +164,13 @@ export default async function AdminArticlesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
+                          <Link
+                            href={`/blog/${article.slug}`}
+                            target="_blank"
+                            className="text-[#007CFF] hover:text-[#0066CC] transition-colors"
+                          >
+                            View
+                          </Link>
                           <Link
                             href={`/admin/articles/${article.id}/edit`}
                             className="text-[#007CFF] hover:text-[#0066CC] transition-colors"

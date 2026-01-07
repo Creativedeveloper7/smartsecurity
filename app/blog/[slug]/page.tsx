@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { ShareButton } from "./share-button";
 import { CommentSection } from "./comment-section";
+import { ArticleImage } from "./article-image";
 
 interface Article {
   id: string;
@@ -145,20 +145,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </header>
 
         {/* Featured Image */}
-        {imageUrl && (
-          <div className="mb-8 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F8FAFC]">
-            <img
-              src={imageUrl}
-              alt={article.title}
-              className="h-auto w-full object-cover"
-              loading="eager"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
-          </div>
-        )}
+        {imageUrl && <ArticleImage src={imageUrl} alt={article.title} />}
 
         {/* Excerpt */}
         {article.excerpt && (
