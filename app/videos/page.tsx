@@ -130,7 +130,7 @@ export default function VideosPage() {
           {/* Header */}
           <div className="mb-12 text-center">
             <h1 className="mb-4 text-xl font-heading font-bold text-[#0A1A33]">
-              Videos & Media
+              Videos and Gallery
             </h1>
             <p className="mx-auto max-w-2xl text-sm text-[#4A5768]">
               Watch interviews, podcasts, webinars, and expert presentations

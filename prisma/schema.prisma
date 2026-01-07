@@ -84,6 +84,7 @@ model Article {
   metaTitle       String?
   metaDescription String?    @db.Text
   categories      Category[]
+  comments        Comment[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 }
@@ -93,6 +94,19 @@ model Category {
   name      String    @unique
   slug      String    @unique
   articles  Article[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  name      String
+  comment   String   @db.Text
+  approved  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([articleId])
 }
 
 // Videos

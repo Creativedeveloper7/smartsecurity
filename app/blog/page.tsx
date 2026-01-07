@@ -17,8 +17,6 @@ interface Article {
 export default function BlogPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([]);
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -34,8 +32,16 @@ export default function BlogPage() {
 
   const resolveImageUrl = (url?: string | null) => {
     if (!url) return "";
-    if (url.startsWith("http")) return url;
-    return `${baseUrl}${url}`;
+    // If it's already a full URL (http/https), return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    // If it starts with /, it's a relative path from the public folder
+    if (url.startsWith("/")) {
+      return `${baseUrl}${url}`;
+    }
+    // Otherwise, assume it's a relative path and prepend /
+    return `${baseUrl}/${url}`;
   };
 
   // Fetch articles and categories
@@ -103,18 +109,7 @@ export default function BlogPage() {
     setPage(1);
   }, [selectedCategory, searchQuery]);
 
-  const handleArticleClick = (e: React.MouseEvent, article: Article) => {
-    e.preventDefault();
-    setSelectedArticle(article);
-    setIsModalOpen(true);
-    document.body.style.overflow = "hidden";
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedArticle(null);
-    document.body.style.overflow = "unset";
-  };
+  // Removed modal handlers - articles now open in their own pages
 
   // Calculate reading time (rough estimate: 200 words per minute)
   const calculateReadingTime = (content: string) => {
@@ -171,17 +166,6 @@ export default function BlogPage() {
     );
   };
 
-  // Get related articles (exclude current article, same category preferred)
-  const getRelatedArticles = (currentArticle: Article) => {
-    const currentCategorySlugs = currentArticle.categories.map((c) => c.slug);
-    return articles
-      .filter((article) => {
-        if (article.id === currentArticle.id) return false;
-        // Prefer articles with matching categories
-        return article.categories.some((cat) => currentCategorySlugs.includes(cat.slug));
-      })
-      .slice(0, 3);
-  };
 
   if (loading) {
     return (
@@ -285,10 +269,10 @@ export default function BlogPage() {
                 const imageUrl = resolveImageUrl(article.featuredImage);
 
                 return (
-                  <button
+                  <Link
                     key={article.id}
-                    onClick={(e) => handleArticleClick(e, article)}
-                    className="group w-full rounded-xl border border-[#E5E7EB] bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#007CFF] hover:shadow-lg"
+                    href={`/blog/${article.slug}`}
+                    className="group w-full rounded-xl border border-[#E5E7EB] bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#007CFF] hover:shadow-lg block"
                   >
                     {/* Featured Image */}
                     <div className="aspect-[4/3] w-full overflow-hidden rounded-t-xl bg-gradient-to-br from-[#0A1A33] to-[#005B6E]">
@@ -298,6 +282,18 @@ export default function BlogPage() {
                           alt={article.title}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                           loading="lazy"
+                          onError={(e) => {
+                            // Hide image on error and show placeholder
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            const parent = target.parentElement;
+                            if (parent && !parent.querySelector(".image-placeholder")) {
+                              const placeholder = document.createElement("div");
+                              placeholder.className = "image-placeholder flex h-full items-center justify-center";
+                              placeholder.innerHTML = '<span class="text-white/50">Article Image</span>';
+                              parent.appendChild(placeholder);
+                            }
+                          }}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
@@ -348,7 +344,7 @@ export default function BlogPage() {
                         <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
                       </div>
                     </div>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -375,151 +371,6 @@ export default function BlogPage() {
           {renderPagination()}
         </div>
       </div>
-
-      {/* Article Modal */}
-      {isModalOpen && selectedArticle && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
-          onClick={closeModal}
-        >
-          <div
-            className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={closeModal}
-              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2D3748] shadow-lg transition-colors hover:bg-white hover:text-[#007CFF]"
-              aria-label="Close modal"
-            >
-              <i className="fa-solid fa-xmark fa-text text-xl"></i>
-            </button>
-
-            {/* Modal Content */}
-            <div className="max-h-[90vh] overflow-y-auto">
-              {/* Article Header */}
-              <div className="border-b border-[#E5E7EB] bg-white p-8 space-y-3">
-                {selectedArticle.categories.length > 0 && (
-                  <span className="mb-4 inline-block rounded-full bg-[#F3F4F6] px-4 py-2 text-sm font-medium text-[#005B6E]">
-                    {selectedArticle.categories[0].name}
-                  </span>
-                )}
-                <h1 className="text-2xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-3xl">
-                  {selectedArticle.title}
-                </h1>
-                {selectedArticle.publishedAt && (
-                  <div className="flex flex-wrap items-center gap-6 text-sm text-[#4A5768]">
-                    <div className="flex items-center gap-2">
-                      <i className="fa-regular fa-calendar fa-text"></i>
-                      {new Date(selectedArticle.publishedAt).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <i className="fa-regular fa-clock fa-text"></i>
-                      {calculateReadingTime(selectedArticle.content)} min read
-                    </div>
-                    <button className="flex items-center gap-2 hover:text-[#007CFF] transition-colors">
-                      <i className="fa-regular fa-share-nodes fa-text"></i>
-                      Share
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Article Content */}
-              <div className="p-8">
-                {selectedArticle.featuredImage && (
-                  <div className="mb-8 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F8FAFC]">
-                    <img
-                      src={resolveImageUrl(selectedArticle.featuredImage)}
-                      alt={selectedArticle.title}
-                      className="h-auto w-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                <div
-                  className="prose prose-lg max-w-3xl mx-auto mb-12
-                  prose-headings:mb-3 prose-headings:text-[#0A1A33] prose-headings:font-semibold
-                  prose-p:mb-5 prose-p:text-[#2D3748] prose-p:leading-relaxed
-                  prose-ul:mb-5 prose-ol:mb-5 prose-li:mb-2
-                  prose-strong:text-[#0A1A33]
-                  prose-a:text-[#007CFF] prose-a:no-underline hover:prose-a:underline
-                  prose-img:rounded-xl prose-img:border prose-img:border-[#E5E7EB]"
-                  dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
-                />
-
-                {/* Related Articles Section */}
-                {getRelatedArticles(selectedArticle).length > 0 && (
-                  <div className="mt-16 border-t border-[#E5E7EB] pt-12">
-                    <h2 className="mb-8 text-xl font-heading font-semibold text-[#1F2937]">
-                      Related Articles
-                    </h2>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                      {getRelatedArticles(selectedArticle).map((article) => {
-                        const readingTime = calculateReadingTime(article.content);
-                        const publishedDate = article.publishedAt
-                          ? new Date(article.publishedAt)
-                          : null;
-                        const primaryCategory = article.categories[0]?.name || "Uncategorized";
-
-                        return (
-                          <button
-                            key={article.id}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleArticleClick(e, article);
-                              const modalContent = document.querySelector('[class*="max-h-[90vh]"]');
-                              if (modalContent) {
-                                modalContent.scrollTo({ top: 0, behavior: "smooth" });
-                              }
-                            }}
-                            className="group w-full text-left rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md cursor-pointer"
-                          >
-                            <span className="mb-3 inline-block rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#005B6E]">
-                              {primaryCategory}
-                            </span>
-                            <h3 className="mb-2 text-sm font-heading font-semibold text-[#1F2937] group-hover:text-[#007CFF] transition-colors">
-                              {article.title}
-                            </h3>
-                            {article.excerpt && (
-                              <p className="mb-4 text-sm leading-relaxed text-[#4A5768] line-clamp-3">
-                                {article.excerpt}
-                              </p>
-                            )}
-                            {publishedDate && (
-                              <div className="flex items-center gap-4 text-xs text-[#4A5768]">
-                                <div className="flex items-center gap-1">
-                                  <i className="fa-regular fa-calendar fa-text"></i>
-                                  {publishedDate.toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <i className="fa-regular fa-clock fa-text"></i>
-                                  {readingTime} min
-                                </div>
-                              </div>
-                            )}
-                            <div className="mt-4 flex items-center text-xs font-medium text-[#007CFF] opacity-0 group-hover:opacity-100 transition-opacity">
-                              Read Article
-                              <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
