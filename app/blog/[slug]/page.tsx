@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
 import { ShareButton } from "./share-button";
 import { CommentSection } from "./comment-section";
 
@@ -58,21 +58,30 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   let article: Article | null = null;
 
   try {
-    // Get the host from headers for absolute URL
-    const headersList = await headers();
-    const host = headersList.get("host") || "localhost:3000";
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const baseUrl = `${protocol}://${host}`;
-    
-    const response = await fetch(`${baseUrl}/api/articles/${slug}`, {
-      cache: "no-store",
+    // Fetch article directly from database
+    const articleData = await prisma.article.findUnique({
+      where: { slug },
+      include: {
+        categories: true,
+      },
     });
 
-    if (response.ok) {
-      article = await response.json();
+    if (!articleData) {
+      notFound();
     }
+
+    // Increment views
+    await prisma.article.update({
+      where: { id: articleData.id },
+      data: { views: { increment: 1 } },
+    }).catch(() => {
+      // Ignore errors when updating views
+    });
+
+    article = articleData as Article;
   } catch (error) {
     console.error("Error fetching article:", error);
+    notFound();
   }
 
   if (!article) {
