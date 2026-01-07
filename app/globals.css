@@ -232,3 +232,33 @@ button, .btn {
 .prose a:hover {
   color: #0066CC;
 }
+
+/* Logo marquee animation for trusted organizations section */
+@keyframes logo-scroll {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.logo-marquee-container {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.logo-marquee-track {
+  display: flex;
+  width: max-content;
+}
+
+.logo-marquee {
+  display: inline-flex;
+  align-items: center;
+  gap: 3rem;
+  width: max-content;
+  animation: logo-scroll 25s linear infinite;
+}

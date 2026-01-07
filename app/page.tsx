@@ -242,26 +242,49 @@ export default function Home() {
               {/* Logo Slider Section - Enhanced */}
               <div className="mt-4">
                 <p className="text-sm font-medium text-[#4A5768] mb-4">Trusted by Leading Organizations</p>
-                <div className="flex flex-wrap items-center gap-8 p-6 bg-white/60 backdrop-blur-sm rounded-xl border border-[#E5E7EB]">
-                  {[
-                    { src: "/logos/coast guards.jpg", alt: "Kenya Coast Guard Service" },
-                    { src: "/logos/DCI.jpg", alt: "Directorate of Criminal Investigations" },
-                    { src: "/logos/npslogo.jpg", alt: "National Police Service" },
-                    { src: "/logos/UN_emblem_blue.svg.png", alt: "United Nations" },
-                  ].map((logo, index) => (
-                    <div 
-                      key={index} 
-                      className="h-14 w-auto flex items-center opacity-70 hover:opacity-100 transition-opacity duration-300 grayscale hover:grayscale-0 transition-all"
-                    >
-                      <Image
-                        src={logo.src}
-                        alt={logo.alt}
-                        width={140}
-                        height={56}
-                        className="h-14 w-auto object-contain"
-                      />
+                <div className="logo-marquee-container p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-[#E5E7EB]">
+                  <div className="logo-marquee-track">
+                    <div className="logo-marquee">
+                      {[
+                        { src: "/logos/coast guards.jpg", alt: "Kenya Coast Guard Service" },
+                        { src: "/logos/DCI.jpg", alt: "Directorate of Criminal Investigations" },
+                        { src: "/logos/npslogo.jpg", alt: "National Police Service" },
+                        { src: "/logos/UN_emblem_blue.svg.png", alt: "United Nations" },
+                      ].map((logo, index) => (
+                        <div
+                          key={index}
+                          className="h-14 w-auto flex items-center opacity-90 hover:opacity-100 transition-opacity duration-300 flex-shrink-0"
+                        >
+                          <Image
+                            src={logo.src}
+                            alt={logo.alt}
+                            width={140}
+                            height={56}
+                            className="h-14 w-auto object-contain"
+                          />
+                        </div>
+                      ))}
+                      {[
+                        { src: "/logos/coast guards.jpg", alt: "Kenya Coast Guard Service" },
+                        { src: "/logos/DCI.jpg", alt: "Directorate of Criminal Investigations" },
+                        { src: "/logos/npslogo.jpg", alt: "National Police Service" },
+                        { src: "/logos/UN_emblem_blue.svg.png", alt: "United Nations" },
+                      ].map((logo, index) => (
+                        <div
+                          key={`dup-${index}`}
+                          className="h-14 w-auto flex items-center opacity-90 hover:opacity-100 transition-opacity duration-300 flex-shrink-0"
+                        >
+                          <Image
+                            src={logo.src}
+                            alt={logo.alt}
+                            width={140}
+                            height={56}
+                            className="h-14 w-auto object-contain"
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
