@@ -80,14 +80,15 @@ export async function POST(request: Request) {
       .from(SUPABASE_STORAGE_BUCKET)
       .getPublicUrl(path);
 
-    let publicUrl = publicData?.publicUrl;
+    // Allow for cases where Supabase might not return a public URL
+    let publicUrl: string | undefined = publicData?.publicUrl;
 
     // Fallback: generate a signed URL (valid 30 days) if public URL isn't available
     if (!publicUrl) {
       const { data: signedData } = await supabase.storage
         .from(SUPABASE_STORAGE_BUCKET)
         .createSignedUrl(path, 60 * 60 * 24 * 30);
-      publicUrl = signedData?.signedUrl;
+      publicUrl = signedData?.signedUrl ?? publicUrl;
     }
 
     return NextResponse.json({
