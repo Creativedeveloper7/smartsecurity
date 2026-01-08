@@ -1,176 +1,459 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
-const courses = {
-  "strategic-risk-threat-assessment": {
-    title: "Strategic Risk & Threat Assessment",
-    description: "Comprehensive methodology for identifying, analyzing, and mitigating security risks at organizational and strategic levels.",
-    content: `
-      <p>This course provides a systematic approach to risk and threat assessment, enabling organizations to identify vulnerabilities, evaluate potential impacts, and develop strategic mitigation frameworks.</p>
-      
-      <h3>Course Objectives</h3>
-      <ul>
-        <li>Master risk identification and analysis methodologies</li>
-        <li>Develop threat assessment frameworks aligned with international standards</li>
-        <li>Create strategic risk mitigation and management plans</li>
-        <li>Implement continuous monitoring and assessment processes</li>
-      </ul>
-      
-      <h3>Delivery Method</h3>
-      <p>This course is delivered through personalized consultation sessions, tailored to your organization's specific security context and requirements. Sessions combine theoretical frameworks with practical application exercises.</p>
-      
-      <h3>Target Audience</h3>
-      <p>Security professionals, risk managers, organizational leaders, and decision-makers responsible for strategic security planning.</p>
-    `,
-  },
-  "organizational-security-resilience": {
-    title: "Organizational Security & Resilience Planning",
-    description: "Develop robust security frameworks and resilience strategies to protect organizational assets and operations.",
-    content: `
-      <p>Learn to design and implement comprehensive security frameworks that enhance organizational resilience and operational continuity.</p>
-      
-      <h3>Course Objectives</h3>
-      <ul>
-        <li>Design integrated security frameworks</li>
-        <li>Develop business continuity and resilience strategies</li>
-        <li>Establish security governance structures</li>
-        <li>Create incident response and recovery protocols</li>
-      </ul>
-      
-      <h3>Delivery Method</h3>
-      <p>Delivered through structured consultation sessions and guided planning workshops, customized to your organization's operational environment and security requirements.</p>
-      
-      <h3>Target Audience</h3>
-      <p>Security directors, operations managers, business continuity planners, and organizational leadership teams.</p>
-    `,
-  },
-  "cybersecurity-awareness-leadership": {
-    title: "Cybersecurity Awareness for Leadership",
-    description: "Executive-level cybersecurity education and strategic decision-making frameworks for senior management.",
-    content: `
-      <p>Equip leadership teams with the knowledge and frameworks needed to make informed cybersecurity decisions and manage digital risks effectively.</p>
-      
-      <h3>Course Objectives</h3>
-      <ul>
-        <li>Understand cybersecurity threats and their business impact</li>
-        <li>Develop strategic cybersecurity governance approaches</li>
-        <li>Establish executive-level risk management frameworks</li>
-        <li>Create cybersecurity awareness and training programs</li>
-      </ul>
-      
-      <h3>Delivery Method</h3>
-      <p>Executive consultation sessions and strategic workshops designed for senior leadership, focusing on decision-making frameworks and organizational cybersecurity posture.</p>
-      
-      <h3>Target Audience</h3>
-      <p>C-suite executives, board members, senior management, and organizational leaders responsible for cybersecurity strategy.</p>
-    `,
-  },
-  "crisis-response-incident-management": {
-    title: "Crisis Response & Incident Management",
-    description: "Structured approaches to crisis management, incident response protocols, and organizational recovery planning.",
-    content: `
-      <p>Master crisis response methodologies and incident management protocols to ensure effective organizational response and recovery.</p>
-      
-      <h3>Course Objectives</h3>
-      <ul>
-        <li>Develop comprehensive crisis response frameworks</li>
-        <li>Establish incident management protocols and procedures</li>
-        <li>Create communication strategies for crisis situations</li>
-        <li>Design recovery and business continuity plans</li>
-      </ul>
-      
-      <h3>Delivery Method</h3>
-      <p>Delivered through consultation sessions and scenario-based training exercises, tailored to your organization's specific risk profile and operational context.</p>
-      
-      <h3>Target Audience</h3>
-      <p>Security managers, emergency response coordinators, crisis management teams, and organizational leaders responsible for incident response.</p>
-    `,
-  },
-  "governance-compliance-policy": {
-    title: "Governance, Compliance & Security Policy Design",
-    description: "Establish effective security governance structures, compliance frameworks, and policy development methodologies.",
-    content: `
-      <p>Learn to design and implement effective security governance structures, compliance frameworks, and organizational security policies.</p>
-      
-      <h3>Course Objectives</h3>
-      <ul>
-        <li>Design security governance frameworks and structures</li>
-        <li>Develop compliance management systems</li>
-        <li>Create comprehensive security policy frameworks</li>
-        <li>Establish monitoring and audit processes</li>
-      </ul>
-      
-      <h3>Delivery Method</h3>
-      <p>Structured consultation sessions and policy development workshops, customized to align with relevant regulatory requirements and organizational needs.</p>
-      
-      <h3>Target Audience</h3>
-      <p>Compliance officers, policy developers, security managers, and organizational leaders responsible for governance and regulatory compliance.</p>
-    `,
-  },
-};
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  price: string;
+  duration: string;
+  image?: string;
+  expandedDescription?: string;
+  keyOutcomes?: string[];
+  idealAudience?: string;
+  deliveryFormat?: string;
+  slug?: string;
+}
 
-export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const course = courses[id as keyof typeof courses];
+export default function CourseDetailPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    organization: "",
+    preferredDate: "",
+    preferredTime: "09:00",
+    additionalNotes: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  if (!course) {
-    notFound();
+  // Fetch course details
+  useEffect(() => {
+    if (!id) {
+      setError("No course ID provided");
+      setLoading(false);
+      return;
+    }
+
+    const fetchCourse = async () => {
+      try {
+        const response = await fetch(`/api/courses/${id}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch course");
+        }
+
+        if (!data.course) {
+          throw new Error("Course not found");
+        }
+
+        setCourse(data.course);
+      } catch (err) {
+        console.error("Error fetching course:", err);
+        setError(err instanceof Error ? err.message : "Failed to load course");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourse();
+  }, [id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.clientName || !formData.clientEmail || !formData.clientPhone || !formData.preferredDate) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const startDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours default
+
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "course",
+          courseId: id,
+          courseTitle: course?.title,
+          clientName: formData.clientName.trim(),
+          clientEmail: formData.clientEmail.trim(),
+          clientPhone: formData.clientPhone.trim(),
+          organization: formData.organization.trim() || null,
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          notes: formData.additionalNotes.trim() || null,
+          price: course?.price || "On request",
+          status: "PENDING",
+          serviceName: `Course: ${course?.title}`,
+          duration: 480, // 8 hours in minutes
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to submit booking");
+      }
+
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error("Error submitting booking:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit booking. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !course) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error || "Course not found"}</p>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/courses"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back to Courses
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-3xl w-full bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">Booking Request Received!</h2>
+          <p className="mt-2 text-gray-600">
+            Thank you for your interest in our <span className="font-semibold text-gray-900">{course.title}</span> course.
+            We've received your booking request and will contact you shortly to confirm the details.
+          </p>
+          <div className="mt-8">
+            <Link
+              href="/courses"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Back to Courses
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        {/* Back Link */}
-        <Link
-          href="/courses"
-          className="mb-8 inline-flex items-center text-sm text-[#007CFF] hover:underline"
-        >
-          <i className="fa-solid fa-arrow-left fa-text mr-2"></i>
-          Back to Courses
-        </Link>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        {/* Course Details */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+          <div className="px-4 py-5 sm:px-6 bg-gray-50">
+            <h1 className="text-lg leading-6 font-medium text-gray-900">Course Details</h1>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">View and book this course</p>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
+            <dl className="sm:divide-y sm:divide-gray-200">
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Course Title</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">
+                  {course.title}
+                </dd>
+              </div>
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Description</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  <div className="prose prose-sm max-w-none">
+                    {course.description}
+                  </div>
+                </dd>
+              </div>
+              {course.expandedDescription && (
+                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Detailed Information</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    <div className="prose prose-sm max-w-none">
+                      {course.expandedDescription}
+                    </div>
+                  </dd>
+                </div>
+              )}
+              {course.keyOutcomes && course.keyOutcomes.length > 0 && (
+                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500">Key Outcomes</dt>
+                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    <ul className="list-disc pl-5 space-y-1">
+                      {course.keyOutcomes.map((outcome, index) => (
+                        <li key={index}>{outcome}</li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Ideal Audience</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {course.idealAudience || "Not specified"}
+                </dd>
+              </div>
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Delivery Format</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {course.deliveryFormat || "Not specified"}
+                </dd>
+              </div>
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Duration</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  {course.duration || "Not specified"}
+                </dd>
+              </div>
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Price</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 font-medium">
+                  {course.price || "Contact for pricing"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
 
-        {/* Course Header */}
-        <header className="mb-8">
-          <h1 className="mb-4 text-2xl font-heading font-bold leading-tight text-[#0A1A33] lg:text-3xl">
-            {course.title}
-          </h1>
-          <p className="text-sm leading-relaxed text-[#4A5768]">
-            {course.description}
-          </p>
-        </header>
-
-        {/* Course Content */}
-        <article
-          className="prose prose-lg max-w-none mb-12"
-          dangerouslySetInnerHTML={{ __html: course.content }}
-          style={{
-            color: "#2D3748",
-          }}
-        />
-
-        {/* Consultation CTA */}
-        <div className="rounded-lg border-2 border-[#E5E7EB] bg-[#F3F4F6] p-8">
-          <div className="mb-6 text-center">
-            <h2 className="mb-3 text-lg font-heading font-semibold text-[#1F2937]">
-              Begin Your Consultation
-            </h2>
-            <p className="text-sm text-[#4A5768] leading-relaxed">
-              This course is delivered through personalized consultation sessions tailored to your organization&apos;s specific needs. 
-              Book a consultation to discuss how this course can be customized for your security context.
+        {/* Booking Form */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 bg-gray-50">
+            <h2 className="text-lg leading-6 font-medium text-gray-900">Book This Course</h2>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              Fill in your details to book this course.
             </p>
           </div>
-          <div className="flex justify-center">
-            <Link
-              href="/bookings"
-              className="inline-flex items-center justify-center rounded-lg bg-[#007CFF] px-8 py-3 text-base font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg"
-            >
-              Book Consultation
-              <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
-            </Link>
-          </div>
+
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-6 mt-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6 p-6">
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-3">
+                <label htmlFor="clientName" className="block text-sm font-medium text-gray-700">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    id="clientName"
+                    required
+                    value={formData.clientName}
+                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="clientEmail" className="block text-sm font-medium text-gray-700">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="email"
+                    id="clientEmail"
+                    required
+                    value={formData.clientEmail}
+                    onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="clientPhone" className="block text-sm font-medium text-gray-700">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="tel"
+                    id="clientPhone"
+                    required
+                    value={formData.clientPhone}
+                    onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="organization" className="block text-sm font-medium text-gray-700">
+                  Organization (Optional)
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    id="organization"
+                    value={formData.organization}
+                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700">
+                  Preferred Date <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="date"
+                    id="preferredDate"
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                    value={formData.preferredDate}
+                    onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700">
+                  Preferred Time <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1">
+                  <select
+                    id="preferredTime"
+                    required
+                    value={formData.preferredTime}
+                    onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="09:00">09:00 AM</option>
+                    <option value="10:00">10:00 AM</option>
+                    <option value="11:00">11:00 AM</option>
+                    <option value="12:00">12:00 PM</option>
+                    <option value="13:00">01:00 PM</option>
+                    <option value="14:00">02:00 PM</option>
+                    <option value="15:00">03:00 PM</option>
+                    <option value="16:00">04:00 PM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="sm:col-span-6">
+                <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-700">
+                  Additional Notes (Optional)
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="additionalNotes"
+                    rows={3}
+                    value={formData.additionalNotes}
+                    onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Any special requirements or questions you might have..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-5">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    "Book Now"
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 }
-

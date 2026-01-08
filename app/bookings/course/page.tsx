@@ -1,51 +1,52 @@
 "use client";
 
+import React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 
-const courses = {
-  "strategic-risk-threat-assessment": {
-    title: "Strategic Risk & Threat Assessment",
-    description: "Comprehensive methodology for identifying, analyzing, and mitigating security risks at organizational and strategic levels.",
-    deliveryFormat: "Executive Briefing / Workshop / Custom",
-    duration: "2-3 days (customizable)",
-    price: "On request",
-  },
-  "organizational-security-resilience": {
-    title: "Organizational Security & Resilience Planning",
-    description: "Develop robust security frameworks and resilience strategies to protect organizational assets and operations.",
-    deliveryFormat: "Workshop / Custom",
-    duration: "3-5 days (customizable)",
-    price: "From $5,000 per cohort",
-  },
-  "cybersecurity-awareness-leadership": {
-    title: "Cybersecurity Awareness for Leadership",
-    description: "Executive-level cybersecurity education and strategic decision-making frameworks for senior management.",
-    deliveryFormat: "Executive Briefing / Custom",
-    duration: "1-2 days (customizable)",
-    price: "On request",
-  },
-  "crisis-response-incident-management": {
-    title: "Crisis Response & Incident Management",
-    description: "Structured approaches to crisis management, incident response protocols, and organizational recovery planning.",
-    deliveryFormat: "Workshop / Custom",
-    duration: "2-4 days (customizable)",
-    price: "From $4,500 per cohort",
-  },
-  "governance-compliance-policy": {
-    title: "Governance, Compliance & Security Policy Design",
-    description: "Establish effective security governance structures, compliance frameworks, and policy development methodologies.",
-    deliveryFormat: "Workshop / Custom",
-    duration: "2-3 days (customizable)",
-    price: "On request",
-  },
-};
+interface Course {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  expandedDescription: string;
+  keyOutcomes: string[];
+  idealAudience: string;
+  deliveryFormat: string;
+  duration: string;
+  price: string;
+  image: string | null;
+  published: boolean;
+  createdAt: string;
+}
 
 function CourseBookingForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const courseId = searchParams.get("courseId");
+  
+  // Get courseId from URL and ensure it's properly decoded
+  const courseId = (() => {
+    const rawId = searchParams?.get("courseId") || "";
+    console.log("Raw courseId from URL:", rawId);
+    
+    if (!rawId) {
+      console.error("No courseId found in URL parameters");
+      return "";
+    }
+    
+    try {
+      const decodedId = decodeURIComponent(rawId);
+      console.log("Decoded courseId:", decodedId);
+      return decodedId;
+    } catch (error) {
+      console.error("Error decoding courseId:", error);
+      return "";
+    }
+  })();
+  
+  // Debug: Log the final courseId
+  console.log("Final courseId to use:", courseId, "(type:", typeof courseId, ")");
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -53,31 +54,166 @@ function CourseBookingForm() {
     clientPhone: "",
     organization: "",
     preferredDate: "",
-    preferredTime: "",
+    preferredTime: "09:00",
     additionalNotes: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedCourse = courseId ? courses[courseId as keyof typeof courses] : null;
-
+  // Fetch course details
   useEffect(() => {
-    if (!courseId || !selectedCourse) {
+    console.log("useEffect triggered with courseId:", courseId);
+    
+    if (!courseId) {
+      const errorMsg = "No course selected. Please select a course to book.";
+      console.error(errorMsg);
+      setError(errorMsg);
       router.push("/courses");
+      return;
     }
-  }, [courseId, selectedCourse, router]);
+
+    // Validate courseId format
+    const trimmedId = courseId.trim();
+    if (!trimmedId) {
+      const errorMsg = `Invalid course selection. Please select a valid course to continue.`;
+      console.error(errorMsg, { courseId });
+      setError(errorMsg);
+      return;
+    }
+
+    const fetchCourse = async () => {
+      console.log("Starting to fetch course with ID:", courseId);
+      try {
+        // Ensure courseId is properly encoded and the URL is correctly formed
+        if (!courseId) {
+          throw new Error("No valid course ID available for API request");
+        }
+        
+        const encodedId = encodeURIComponent(courseId);
+        const apiUrl = `/api/courses/${encodedId}`;
+        
+        console.log("Making API request to:", apiUrl);
+        console.log("Encoded courseId:", encodedId);
+        console.log("Making API request to:", apiUrl);
+        
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        console.log("Course API response status:", response.status);
+        console.log("Course API response data:", data);
+        
+        if (!response.ok) {
+          const errorMsg = data.error || `Failed to fetch course details (${response.status})`;
+          console.error("API Error:", errorMsg);
+          throw new Error(errorMsg);
+        }
+        
+        if (!data.course) {
+          const errorMsg = "Course not found or invalid course data";
+          console.error(errorMsg, { data });
+          throw new Error(errorMsg);
+        }
+        
+        console.log("Successfully fetched course:", data.course);
+        setSelectedCourse(data.course);
+        setError(null);
+      } catch (err) {
+        console.error("Error in fetchCourse:", err);
+        const errorMessage = err instanceof Error ? 
+          `Failed to load course: ${err.message}` : 
+          "An unknown error occurred while loading the course";
+        setError(errorMessage);
+      }
+    };
+
+    fetchCourse().catch(err => {
+      console.error("Unhandled error in fetchCourse:", err);
+    });
+  }, [courseId, router]);
+
+  if (!courseId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-md">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Booking Error</h2>
+          <p className="text-gray-700 mb-4">
+            No valid course was selected. Please select a course to continue.
+          </p>
+          <Link 
+            href="/courses" 
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Back to Courses
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="mt-3 text-2xl font-bold text-gray-900">Booking Request Received!</h2>
+            <p className="mt-2 text-gray-600">
+              Thank you for your interest in our <span className="font-semibold">{selectedCourse?.title}</span> course.
+              We've received your booking request and will contact you shortly to confirm the details.
+            </p>
+            <div className="mt-8">
+              <Link
+                href="/courses"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Back to Courses
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedCourse) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          {error ? (
+            <div className="text-red-600">{error}</div>
+          ) : (
+            <div className="animate-pulse">
+              <p className="text-gray-600">Loading course details...</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
+
+    // Basic validation
+    if (!formData.clientName || !formData.clientEmail || !formData.clientPhone || !formData.preferredDate) {
+      setError("Please fill in all required fields");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // Calculate start and end times from preferred date and time
-      const startDateTime = formData.preferredDate
-        ? new Date(`${formData.preferredDate}T${formData.preferredTime || "09:00"}`)
-        : new Date();
-      const endDateTime = new Date(startDateTime.getTime() + 8 * 60 * 60 * 1000); // Default 8 hours
+      const startDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + 8 * 60 * 60 * 1000); // 8 hours default duration
 
       // Submit booking to API
       const response = await fetch("/api/bookings", {
@@ -89,14 +225,17 @@ function CourseBookingForm() {
           type: "course",
           courseId: courseId,
           courseTitle: selectedCourse?.title,
-          clientName: formData.clientName,
-          clientEmail: formData.clientEmail,
-          clientPhone: formData.clientPhone,
-          organization: formData.organization,
+          clientName: formData.clientName.trim(),
+          clientEmail: formData.clientEmail.trim(),
+          clientPhone: formData.clientPhone.trim(),
+          organization: formData.organization.trim() || null,
           startTime: startDateTime.toISOString(),
           endTime: endDateTime.toISOString(),
-          notes: formData.additionalNotes,
-          price: 0, // Price is "On request" or varies
+          notes: formData.additionalNotes.trim() || null,
+          price: 0, // Will be set by the API based on course pricing
+          status: "PENDING",
+          serviceName: `Course: ${selectedCourse?.title}`,
+          duration: 480, // 8 hours in minutes
         }),
       });
 

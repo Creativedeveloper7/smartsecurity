@@ -81,7 +81,7 @@ export default function CoursesPage() {
 
   const handleBookCourse = () => {
     if (!selectedCourse) return;
-    window.location.href = `/bookings/course?courseId=${selectedCourse.id}`;
+    // This will be handled by the Link component now
   };
 
   if (loading) {
@@ -301,12 +301,16 @@ export default function CoursesPage() {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3">
-                    <button
-                      onClick={handleBookCourse}
-                      className="w-full rounded-lg bg-[#007CFF] px-6 py-3 text-base font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg"
+                    <Link
+                      href={{
+                        pathname: '/bookings/course',
+                        query: { courseId: selectedCourse.id }
+                      }}
+                      as={`/bookings/course?courseId=${encodeURIComponent(selectedCourse.id)}`}
+                      className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-center"
                     >
-                      Book This Course
-                    </button>
+                      Book Now
+                    </Link>
 
                     <button
                       onClick={handleShare}

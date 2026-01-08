@@ -1,19 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
-
-// Add seed script configuration
-// Run with: npm run db:seed
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Users & Authentication
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -21,12 +14,12 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role      @default(USER)
-  accounts      Account[]
-  sessions      Session[]
-  orders        Order[]
-  bookings      Booking[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  bookings      Booking[]
+  orders        Order[]
+  sessions      Session[]
 }
 
 model Account {
@@ -35,15 +28,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -64,56 +56,48 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
-}
-
-// Blog/Articles
 model Article {
   id              String     @id @default(cuid())
   title           String
   slug            String     @unique
-  excerpt         String?    @db.Text
-  content         String     @db.Text
+  excerpt         String?
+  content         String
   featuredImage   String?
   published       Boolean    @default(false)
   publishedAt     DateTime?
   views           Int        @default(0)
   metaTitle       String?
-  metaDescription String?    @db.Text
-  categories      Category[]
-  comments        Comment[]
+  metaDescription String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+  comments        Comment[]
+  categories      Category[] @relation("ArticleToCategory")
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  slug      String    @unique
-  articles  Article[]
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  articles Article[] @relation("ArticleToCategory")
 }
 
 model Comment {
   id        String   @id @default(cuid())
-  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   articleId String
   name      String
-  comment   String   @db.Text
-  approved  Boolean  @default(true) // Comments are approved automatically
+  comment   String
+  approved  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
   @@index([articleId])
 }
 
-// Videos
 model Video {
   id          String        @id @default(cuid())
   title       String
-  description String?       @db.Text
+  description String?
   youtubeUrl  String?
   uploadUrl   String?
   thumbnail   String?
@@ -124,39 +108,28 @@ model Video {
   updatedAt   DateTime      @updatedAt
 }
 
-enum VideoCategory {
-  PODCAST
-  INTERVIEW
-  REEL
-  WEBINAR
-  SPEECH
-}
-
-// E-Commerce
 model Product {
   id          String      @id @default(cuid())
   name        String
   slug        String      @unique
-  description String      @db.Text
+  description String
   price       Decimal     @db.Decimal(10, 2)
   images      String[]
   category    String
   stock       Int
   isDigital   Boolean     @default(false)
-  orderItems  OrderItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
 }
 
 model Order {
   id              String        @id @default(cuid())
   orderNumber     String        @unique
-  user            User?         @relation(fields: [userId], references: [id])
   userId          String?
   customerEmail   String
   customerName    String
   shippingAddress Json?
-  items           OrderItem[]
   subtotal        Decimal       @db.Decimal(10, 2)
   tax             Decimal       @db.Decimal(10, 2)
   shipping        Decimal       @db.Decimal(10, 2)
@@ -166,16 +139,107 @@ model Order {
   paymentIntent   String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  user            User?         @relation(fields: [userId], references: [id])
+  items           OrderItem[]
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
-  product   Product @relation(fields: [productId], references: [id])
   productId String
   quantity  Int
   price     Decimal @db.Decimal(10, 2)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  bookingNumber String        @unique
+  userId        String?
+  clientName    String
+  clientEmail   String
+  clientPhone   String
+  serviceId     String
+  startTime     DateTime
+  endTime       DateTime
+  status        BookingStatus @default(PENDING)
+  notes         String?
+  price         Decimal       @db.Decimal(10, 2)
+  paid          Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  service       Service       @relation(fields: [serviceId], references: [id])
+  user          User?         @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  duration    Int
+  price       Decimal   @db.Decimal(10, 2)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+}
+
+model Course {
+  id                  String   @id @default(cuid())
+  title               String
+  slug                String   @unique
+  description         String
+  expandedDescription String
+  keyOutcomes         String[]
+  idealAudience       String
+  deliveryFormat      String
+  duration            String
+  price               String
+  image               String?
+  published           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+model SiteSettings {
+  id              String   @id @default(cuid())
+  siteName        String
+  tagline         String?
+  logo            String?
+  contactEmail    String
+  contactPhone    String
+  address         String?
+  socialLinks     Json?
+  workingHours    Json?
+  maintenanceMode Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum VideoCategory {
+  PODCAST
+  INTERVIEW
+  REEL
+  WEBINAR
+  SPEECH
 }
 
 enum OrderStatus {
@@ -193,88 +257,9 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// Bookings
-model Booking {
-  id            String        @id @default(cuid())
-  bookingNumber String        @unique
-  user          User?         @relation(fields: [userId], references: [id])
-  userId        String?
-  clientName    String
-  clientEmail   String
-  clientPhone   String
-  service       Service       @relation(fields: [serviceId], references: [id])
-  serviceId     String
-  startTime     DateTime
-  endTime       DateTime
-  status        BookingStatus @default(PENDING)
-  notes         String?       @db.Text
-  price         Decimal       @db.Decimal(10, 2)
-  paid          Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-model Service {
-  id          String    @id @default(cuid())
-  name        String
-  description String    @db.Text
-  duration    Int       // in minutes
-  price       Decimal   @db.Decimal(10, 2)
-  active      Boolean   @default(true)
-  bookings    Booking[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
 enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
   COMPLETED
-}
-
-// Courses
-model Course {
-  id                String   @id @default(cuid())
-  title             String
-  slug              String   @unique
-  description       String   @db.Text
-  expandedDescription String @db.Text
-  keyOutcomes       String[] // Array of outcome strings
-  idealAudience     String   @db.Text
-  deliveryFormat    String
-  duration          String
-  price             String   // "On request" or "From $X per cohort"
-  image             String?  // Featured image URL
-  published         Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// Gallery
-model GalleryImage {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @db.Text
-  imageUrl    String
-  order       Int      @default(0) // For custom ordering
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([order])
-}
-
-// Site Settings
-model SiteSettings {
-  id              String   @id @default(cuid())
-  siteName        String
-  tagline         String?  @db.Text
-  logo            String?
-  contactEmail    String
-  contactPhone    String
-  address         String?  @db.Text
-  socialLinks     Json?
-  workingHours    Json?
-  maintenanceMode Boolean  @default(false)
-  updatedAt       DateTime @updatedAt
 }

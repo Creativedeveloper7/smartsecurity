@@ -68,16 +68,24 @@ export default function CoursesPage() {
       {/* Header */}
       <header className="bg-white border-b border-[#E5E7EB]">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl sm:text-2xl font-heading font-bold text-[#0A1A33]">
-              Manage Courses
-            </h1>
-            <Link
-              href="/admin/courses/new"
-              className="rounded-lg bg-[#007CFF] px-4 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg"
-            >
-              + New Course
-            </Link>
+          <div className="space-y-6">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                href="/admin"
+                className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 w-fit"
+              >
+                <i className="mr-2 fa-regular fa-arrow-left"></i> Back to Dashboard
+              </Link>
+              <div className="flex items-center justify-between w-full sm:w-auto sm:space-x-4">
+                <h1 className="text-2xl font-bold">Manage Courses</h1>
+                <Link
+                  href="/admin/courses/new"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <i className="mr-2 fa-regular fa-plus"></i> New Course
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </header>

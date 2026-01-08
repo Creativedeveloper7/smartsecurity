@@ -169,8 +169,8 @@ export default function Home() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-[450px_1fr] lg:gap-16">
             {/* Left Column: Portrait */}
-            <div className="relative group">
-              <div className="relative h-[450px] w-full max-w-[450px] mx-auto lg:mx-0 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-[#007CFF]/20 group-hover:shadow-2xl">
+            <div className="relative group flex flex-col items-center">
+              <div className="relative h-[400px] w-full max-w-[400px] mx-auto lg:mx-0 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 group-hover:shadow-[#007CFF]/20 group-hover:shadow-2xl">
                 {/* Decorative Border */}
                 <div className="absolute inset-0 rounded-2xl border-4 border-white/50 group-hover:border-[#007CFF]/30 transition-colors duration-500 z-10"></div>
                 <div className="absolute -left-2 top-8 w-4 h-32 bg-gradient-to-b from-[#007CFF] to-[#005B6E] rounded-full opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -185,17 +185,17 @@ export default function Home() {
                 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                
-                {/* Name Badge */}
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20">
-                    <h3 className="text-white text-2xl font-heading font-bold mb-1 drop-shadow-lg">
-                      Bruno Shioso
-                    </h3>
-                    <p className="text-white/90 text-sm font-medium">
-                      Director General, Kenya Coast Guard Service
-                    </p>
-                  </div>
+              </div>
+              
+              {/* Name Badge - Moved outside the image container */}
+              <div className="w-full max-w-[400px] -mt-6 px-6 z-10">
+                <div className="bg-gradient-to-r from-[#007CFF] to-[#005B6E] rounded-lg p-4 shadow-lg">
+                  <h3 className="text-white text-xl font-heading font-bold text-center mb-1">
+                    Bruno Shioso
+                  </h3>
+                  <p className="text-white/90 text-sm font-medium text-center">
+                    Distinguished Security Expert
+                  </p>
                 </div>
               </div>
             </div>

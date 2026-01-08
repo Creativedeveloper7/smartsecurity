@@ -24,7 +24,7 @@ interface GalleryImage {
   createdAt: Date | string;
 }
 
-const videoCategories = ["All", "Podcast", "Interview", "Reel", "Webinar", "Speech"];
+const videoCategories = ["All", "Podcast", "Interview"];
 
 export default function VideosPage() {
   const [activeTab, setActiveTab] = useState<"videos" | "gallery">("videos");

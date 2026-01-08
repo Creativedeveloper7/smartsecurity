@@ -282,6 +282,17 @@ export default async function AdminDashboard() {
               </h3>
               <p className="text-sm text-[#4A5768]">View and manage consultations</p>
             </Link>
+
+            <Link
+              href="/admin/courses"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+            >
+              <i className="fa-regular fa-graduation-cap fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
+              <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
+                Manage Courses
+              </h3>
+              <p className="text-sm text-[#4A5768]">Create and organize training courses</p>
+            </Link>
           </div>
         </div>
 
