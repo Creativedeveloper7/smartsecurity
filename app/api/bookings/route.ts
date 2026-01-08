@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -61,10 +63,33 @@ export async function POST(request: Request) {
     // Generate unique booking number
     const bookingNumber = `BK-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    // For course bookings, find or create a "Course" service
+    // Handle service - find or create
     let finalServiceId = serviceId;
-    if (type === "course") {
-      // Find or create a generic "Course" service
+    const { serviceName, duration, servicePrice } = body;
+
+    if (!finalServiceId && serviceName) {
+      // Find existing service by name
+      let existingService = await prisma.service.findFirst({
+        where: { name: serviceName },
+      });
+
+      if (!existingService) {
+        // Create new service
+        existingService = await prisma.service.create({
+          data: {
+            name: serviceName,
+            description: `Consultation service: ${serviceName}`,
+            duration: duration || 60, // Default 60 minutes
+            price: servicePrice || price || 0,
+            active: true,
+          },
+        });
+      }
+      finalServiceId = existingService.id;
+    }
+
+    // For course bookings, find or create a "Course" service
+    if (type === "course" && !finalServiceId) {
       let courseService = await prisma.service.findFirst({
         where: { name: "Course" },
       });
@@ -83,10 +108,20 @@ export async function POST(request: Request) {
       finalServiceId = courseService.id;
     }
 
+    if (!finalServiceId) {
+      return NextResponse.json(
+        { error: "Service ID or Service Name is required" },
+        { status: 400 }
+      );
+    }
+
     // Build notes with course information if it's a course booking
     let finalNotes = notes || "";
     if (type === "course" && courseTitle) {
       finalNotes = `Course Booking: ${courseTitle}\nCourse ID: ${courseId}\nOrganization: ${organization || "N/A"}\n\n${finalNotes}`;
+    } else if (organization) {
+      // Add organization to notes if not a course booking
+      finalNotes = organization ? `Organization: ${organization}\n\n${finalNotes}` : finalNotes;
     }
 
     // Calculate dates from preferred date/time

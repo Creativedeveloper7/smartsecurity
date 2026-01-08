@@ -100,10 +100,10 @@ export default async function AdminDashboard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         {/* Stats Grid */}
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+        <div className="mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Articles</p>
@@ -120,7 +120,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Videos</p>
@@ -134,7 +134,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Courses</p>
@@ -151,7 +151,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Products</p>
@@ -165,7 +165,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Bookings</p>
@@ -179,7 +179,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Orders</p>
@@ -193,7 +193,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Comments</p>
@@ -207,7 +207,7 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#4A5768]">Total Revenue</p>
@@ -227,10 +227,10 @@ export default async function AdminDashboard() {
           <h2 className="mb-4 text-lg font-heading font-semibold text-[#1F2937]">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href="/admin/articles"
-              className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
             >
               <i className="fa-regular fa-book fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
               <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
@@ -241,7 +241,7 @@ export default async function AdminDashboard() {
 
             <Link
               href="/admin/videos"
-              className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
             >
               <i className="fa-regular fa-video fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
               <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
@@ -251,8 +251,19 @@ export default async function AdminDashboard() {
             </Link>
 
             <Link
+              href="/admin/gallery"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+            >
+              <i className="fa-regular fa-images fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
+              <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
+                Manage Gallery
+              </h3>
+              <p className="text-sm text-[#4A5768]">Upload and manage gallery images</p>
+            </Link>
+
+            <Link
               href="/admin/products"
-              className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
             >
               <i className="fa-regular fa-bag-shopping fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
               <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
@@ -263,7 +274,7 @@ export default async function AdminDashboard() {
 
             <Link
               href="/admin/bookings"
-              className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
+              className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-md"
             >
               <i className="fa-regular fa-calendar fa-subtitle mb-3 text-4xl text-[#005B6E]"></i>
               <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937]">
@@ -279,7 +290,7 @@ export default async function AdminDashboard() {
           <h2 className="mb-4 text-lg font-heading font-semibold text-[#1F2937]">
             Recent Activity
           </h2>
-          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
             <p className="text-sm text-[#4A5768]">
               Recent activity will appear here...
             </p>

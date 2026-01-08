@@ -15,49 +15,73 @@ interface Video {
   createdAt: Date | string;
 }
 
+interface GalleryImage {
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string;
+  order: number;
+  createdAt: Date | string;
+}
+
 const videoCategories = ["All", "Podcast", "Interview", "Reel", "Webinar", "Speech"];
 
 export default function VideosPage() {
+  const [activeTab, setActiveTab] = useState<"videos" | "gallery">("videos");
   const [videos, setVideos] = useState<Video[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchVideos = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch("/api/videos");
-        const data = await response.json();
         
-        // Handle both success and error responses gracefully
-        if (data.error) {
-          console.warn("API returned error:", data.error);
+        // Fetch both videos and gallery images
+        const [videosRes, galleryRes] = await Promise.all([
+          fetch("/api/videos"),
+          fetch("/api/gallery"),
+        ]);
+
+        const videosData = await videosRes.json();
+        const galleryData = await galleryRes.json();
+        
+        // Handle videos
+        if (videosData.error) {
+          console.warn("API returned error:", videosData.error);
           setVideos([]);
-          // Don't set error state for database issues - just show empty state
-          if (data.error !== "Database connection failed") {
-            setError(data.message || "Failed to load videos");
-          }
         } else {
-          setVideos(data.videos || []);
+          setVideos(videosData.videos || []);
+        }
+
+        // Handle gallery images
+        if (galleryData.error) {
+          console.warn("Gallery API returned error:", galleryData.error);
+          setGalleryImages([]);
+        } else {
+          setGalleryImages(galleryData.images || []);
         }
       } catch (err: any) {
-        console.error("Error fetching videos:", err);
+        console.error("Error fetching data:", err);
         setVideos([]);
-        // Only show error for non-network issues
+        setGalleryImages([]);
         if (!err.message?.includes("fetch")) {
-          setError(err.message || "Failed to load videos");
+          setError(err.message || "Failed to load content");
         }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVideos();
+    fetchData();
   }, []);
 
   const getYouTubeEmbedUrl = (url: string | null) => {
@@ -88,6 +112,26 @@ export default function VideosPage() {
     setSelectedVideo(null);
     document.body.style.overflow = "unset";
   };
+
+  const handleImageClick = (image: GalleryImage) => {
+    setSelectedImage(image);
+    setIsImageModalOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setSelectedImage(null);
+    document.body.style.overflow = "unset";
+  };
+
+  const filteredGalleryImages = galleryImages.filter((image) => {
+    return (
+      searchQuery === "" ||
+      image.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (image.description && image.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   const filteredVideos = videos.filter((video) => {
     const videoCategory = videoCategories.find((cat) => cat.toUpperCase() === video.category);
@@ -133,56 +177,118 @@ export default function VideosPage() {
               Videos and Gallery
             </h1>
             <p className="mx-auto max-w-2xl text-sm text-[#4A5768]">
-              Watch interviews, podcasts, webinars, and expert presentations
+              Watch interviews, podcasts, webinars, and browse our gallery
             </p>
           </div>
 
-          {/* Filters */}
-          <div className="mb-8 space-y-4">
-            {/* Category Filter */}
-            <div className="flex flex-wrap justify-center gap-3">
-              {videoCategories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-                    selectedCategory === category
-                      ? "bg-[#007CFF] text-white"
-                      : "bg-white text-[#2D3748] hover:bg-[#F3F4F6]"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-            {/* Search Bar */}
-            <div className="flex justify-center">
-              <div className="relative w-full max-w-md">
-                <input
-                  type="text"
-                  placeholder="Search videos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 pl-10 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
-                />
-                <i className="fa-regular fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A5768] hover:text-[#007CFF] transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <i className="fa-solid fa-xmark fa-text"></i>
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* Tabs */}
+          <div className="mb-8 flex justify-center gap-4">
+            <button
+              onClick={() => {
+                setActiveTab("videos");
+                setSearchQuery("");
+                setSelectedCategory("All");
+              }}
+              className={`rounded-lg px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === "videos"
+                  ? "bg-[#007CFF] text-white"
+                  : "bg-white text-[#2D3748] hover:bg-[#F3F4F6]"
+              }`}
+            >
+              Videos
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("gallery");
+                setSearchQuery("");
+              }}
+              className={`rounded-lg px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === "gallery"
+                  ? "bg-[#007CFF] text-white"
+                  : "bg-white text-[#2D3748] hover:bg-[#F3F4F6]"
+              }`}
+            >
+              Gallery
+            </button>
           </div>
 
+          {/* Filters */}
+          {activeTab === "videos" && (
+            <div className="mb-8 space-y-4">
+              {/* Category Filter */}
+              <div className="flex flex-wrap justify-center gap-3">
+                {videoCategories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                      selectedCategory === category
+                        ? "bg-[#007CFF] text-white"
+                        : "bg-white text-[#2D3748] hover:bg-[#F3F4F6]"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Bar */}
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search videos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 pl-10 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
+                  />
+                  <i className="fa-regular fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A5768] hover:text-[#007CFF] transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <i className="fa-solid fa-xmark fa-text"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "gallery" && (
+            <div className="mb-8">
+              {/* Search Bar */}
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search gallery images..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 pl-10 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
+                  />
+                  <i className="fa-regular fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A5768] hover:text-[#007CFF] transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <i className="fa-solid fa-xmark fa-text"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Videos Grid */}
-          {filteredVideos.length > 0 ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {activeTab === "videos" && (
+            <>
+              {filteredVideos.length > 0 ? (
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {filteredVideos.map((video) => {
                 const categoryLabel = videoCategories.find((cat) => cat.toUpperCase() === video.category) || video.category;
                 const thumbnail = video.thumbnail || (video.youtubeUrl ? getYouTubeEmbedUrl(video.youtubeUrl).replace("/embed/", "/vi/") + "/maxresdefault.jpg" : "");
@@ -241,25 +347,79 @@ export default function VideosPage() {
                   </button>
                 );
               })}
-            </div>
-          ) : (
-            <div className="py-12 text-center">
-              <i className="fa-regular fa-video fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
-              <p className="text-sm text-[#4A5768]">
-                No videos found matching your criteria.
-              </p>
-              {(searchQuery || selectedCategory !== "All") && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("All");
-                  }}
-                  className="mt-4 text-sm text-[#007CFF] hover:underline"
-                >
-                  Clear filters
-                </button>
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <i className="fa-regular fa-video fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
+                  <p className="text-sm text-[#4A5768]">
+                    No videos found matching your criteria.
+                  </p>
+                  {(searchQuery || selectedCategory !== "All") && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("All");
+                      }}
+                      className="mt-4 text-sm text-[#007CFF] hover:underline"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
+            </>
+          )}
+
+          {/* Gallery Grid */}
+          {activeTab === "gallery" && (
+            <>
+              {filteredGalleryImages.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredGalleryImages.map((image) => (
+                    <button
+                      key={image.id}
+                      onClick={() => handleImageClick(image)}
+                      className="group w-full overflow-hidden rounded-lg border border-[#E5E7EB] bg-white text-left shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
+                    >
+                      <div className="aspect-square w-full overflow-hidden bg-[#F3F4F6]">
+                        <img
+                          src={image.imageUrl}
+                          alt={image.title}
+                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="mb-1 text-sm font-heading font-semibold text-[#1F2937] group-hover:text-[#007CFF] transition-colors line-clamp-1">
+                          {image.title}
+                        </h3>
+                        {image.description && (
+                          <p className="text-xs leading-relaxed text-[#4A5768] line-clamp-2">
+                            {image.description}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <i className="fa-regular fa-images fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
+                  <p className="text-sm text-[#4A5768]">
+                    {searchQuery
+                      ? "No gallery images found matching your search."
+                      : "No gallery images available."}
+                  </p>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="mt-4 text-sm text-[#007CFF] hover:underline"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -346,6 +506,60 @@ export default function VideosPage() {
                       <p>No video source available</p>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Image Modal */}
+      {isImageModalOpen && selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"
+          onClick={closeImageModal}
+        >
+          <div
+            className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeImageModal}
+              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2D3748] shadow-lg transition-colors hover:bg-white hover:text-[#007CFF]"
+              aria-label="Close modal"
+            >
+              <i className="fa-solid fa-xmark fa-text text-xl"></i>
+            </button>
+
+            {/* Modal Content */}
+            <div className="max-h-[90vh] overflow-y-auto">
+              {/* Image */}
+              <div className="w-full overflow-hidden bg-black">
+                <img
+                  src={selectedImage.imageUrl}
+                  alt={selectedImage.title}
+                  className="w-full h-auto"
+                />
+              </div>
+
+              {/* Image Info */}
+              <div className="border-t border-[#E5E7EB] bg-white p-8">
+                <h1 className="mb-2 text-xl font-heading font-bold leading-tight text-[#0A1A33]">
+                  {selectedImage.title}
+                </h1>
+                {selectedImage.description && (
+                  <p className="mb-4 text-sm leading-relaxed text-[#4A5768]">
+                    {selectedImage.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 text-xs text-[#4A5768]">
+                  <i className="fa-regular fa-calendar fa-text"></i>
+                  {new Date(selectedImage.createdAt).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </div>
               </div>
             </div>

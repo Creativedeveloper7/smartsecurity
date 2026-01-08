@@ -5,6 +5,8 @@ import { ShareButton } from "./share-button";
 import { CommentSection } from "./comment-section";
 import { ArticleImage } from "./article-image";
 
+export const dynamic = 'force-dynamic';
+
 interface Article {
   id: string;
   title: string;
@@ -53,11 +55,22 @@ function resolveImageUrl(url?: string | null): string {
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  let slug: string;
+  try {
+    const paramsObj = await params;
+    slug = paramsObj.slug;
+    console.log("🔍 [ArticlePage] Received params, slug:", slug);
+  } catch (error: any) {
+    console.error("❌ [ArticlePage] Error extracting params:", error);
+    notFound();
+    return null;
+  }
 
   let article: Article | null = null;
 
   try {
+    console.log("🔍 [ArticlePage] Fetching article with slug:", slug);
+    
     // Fetch article directly from database
     const articleData = await prisma.article.findUnique({
       where: { slug },
@@ -66,7 +79,26 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       },
     });
 
+    console.log("📄 [ArticlePage] Query result:", {
+      found: !!articleData,
+      slug,
+      articleId: articleData?.id || "N/A",
+      title: articleData?.title || "N/A",
+    });
+
     if (!articleData) {
+      console.warn("⚠️ [ArticlePage] Article not found for slug:", slug);
+      // Try to find similar slugs for debugging
+      const similarArticles = await prisma.article.findMany({
+        where: {
+          slug: {
+            contains: slug.substring(0, 5), // First 5 chars
+          },
+        },
+        select: { slug: true, title: true },
+        take: 5,
+      });
+      console.log("🔍 [ArticlePage] Similar slugs found:", similarArticles);
       notFound();
     }
 
@@ -74,17 +106,30 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     await prisma.article.update({
       where: { id: articleData.id },
       data: { views: { increment: 1 } },
-    }).catch(() => {
+    }).catch((error) => {
       // Ignore errors when updating views
+      console.warn("Failed to increment views:", error);
     });
 
     article = articleData as Article;
-  } catch (error) {
-    console.error("Error fetching article:", error);
+  } catch (error: any) {
+    console.error("❌ Error fetching article:", {
+      slug,
+      error: error.message,
+      code: error.code,
+      name: error.name,
+    });
+    
+    // Check if it's a database connection error
+    if (error.code === "P1001" || error.message?.includes("Can't reach database")) {
+      console.error("🔴 Database connection failed");
+    }
+    
     notFound();
   }
 
   if (!article) {
+    console.warn("⚠️ Article is null after fetch");
     notFound();
   }
 
@@ -95,7 +140,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const imageUrl = resolveImageUrl(article.featuredImage);
 
   return (
-    <div className="min-h-screen bg-white py-12">
+    <div className="min-h-screen bg-white py-6 sm:py-12">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Back Link */}
         <Link
@@ -120,8 +165,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {article.title}
           </h1>
 
-          {/* Meta Info */}
-          <div className="flex flex-wrap items-center gap-6 text-sm text-[#4A5768]">
+              {/* Meta Info */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-[#4A5768]">
             {publishedDate && (
             <div className="flex items-center gap-2">
               <i className="fa-regular fa-calendar fa-text"></i>

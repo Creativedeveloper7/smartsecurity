@@ -53,11 +53,77 @@ export default function BookingsPage() {
     specialRequirements: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Booking submitted:", { selectedService, formData });
-    alert("Booking request submitted! You will receive a confirmation email shortly.");
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const selectedServiceData = serviceTypes.find((s) => s.id === selectedService);
+      if (!selectedServiceData) {
+        throw new Error("Please select a service");
+      }
+
+      // Calculate start and end times
+      const startDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + selectedServiceData.duration * 60 * 1000);
+
+      // Build notes with all consultation details
+      const notes = [
+        `Consultation Topic: ${formData.consultationTopic}`,
+        formData.organization ? `Organization: ${formData.organization}` : null,
+        formData.specialRequirements ? `Special Requirements: ${formData.specialRequirements}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      // Submit booking - API will handle service creation
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: formData.clientName.trim(),
+          clientEmail: formData.clientEmail.trim(),
+          clientPhone: formData.clientPhone.trim(),
+          serviceName: selectedServiceData.name,
+          duration: selectedServiceData.duration,
+          servicePrice: selectedServiceData.price,
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          notes: notes,
+          price: selectedServiceData.price,
+          organization: formData.organization.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit booking");
+      }
+
+      setIsSubmitted(true);
+      // Reset form
+      setSelectedService(null);
+      setFormData({
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        organization: "",
+        consultationTopic: "",
+        preferredDate: "",
+        preferredTime: "",
+        specialRequirements: "",
+      });
+    } catch (err: any) {
+      console.error("Error submitting booking:", err);
+      setError(err.message || "Failed to submit booking. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,9 +139,9 @@ export default function BookingsPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-3">
           {/* Service Selection */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-2 lg:order-1">
             <h2 className="mb-4 text-2xl font-heading font-semibold text-[#1F2937]">
               Select Service
             </h2>
@@ -115,7 +181,7 @@ export default function BookingsPage() {
           </div>
 
           {/* Booking Form */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-1 lg:order-2">
             <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 shadow-sm">
               {!selectedService ? (
                 <div className="py-12 text-center">
@@ -296,12 +362,28 @@ export default function BookingsPage() {
                     />
                   </div>
 
+                  {/* Error Message */}
+                  {error && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-600">
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Success Message */}
+                  {isSubmitted && (
+                    <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-600">
+                      <p className="font-semibold mb-1">Booking Request Submitted!</p>
+                      <p>Your consultation booking has been sent to the admin dashboard for review. You will receive a confirmation email shortly.</p>
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="w-full rounded-lg bg-[#007CFF] px-8 py-3 text-base font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg"
+                    disabled={isSubmitting || isSubmitted}
+                    className="w-full rounded-lg bg-[#007CFF] px-8 py-3 text-base font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit Booking Request
+                    {isSubmitting ? "Submitting..." : isSubmitted ? "Submitted!" : "Submit Booking Request"}
                   </button>
                 </form>
               )}
