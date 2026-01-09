@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let serviceIdToUse: string;
+    let serviceIdToUse: string | undefined;
     let bookingPrice: number = 0;
     let bookingDuration: number = 60; // Default 1 hour in minutes
 
@@ -59,9 +59,8 @@ export async function POST(request: Request) {
       bookingPrice = Number(generalService.price);
       bookingDuration = generalService.duration;
     }
-
     // Handle course bookings - find or create a service for the course
-    if (courseId) {
+    else if (courseId) {
       // Fetch course details
       const course = await prisma.course.findUnique({
         where: { id: courseId },
@@ -106,8 +105,9 @@ export async function POST(request: Request) {
       serviceIdToUse = courseService.id;
       bookingPrice = Number(courseService.price);
       bookingDuration = courseService.duration;
-    } else if (serviceId) {
-      // Direct service booking
+    } 
+    // Direct service booking
+    else if (serviceId) {
       serviceIdToUse = serviceId;
       
       // Fetch service to get price and duration
@@ -124,6 +124,14 @@ export async function POST(request: Request) {
 
       bookingPrice = Number(service.price);
       bookingDuration = service.duration;
+    }
+
+    // Validate that serviceIdToUse is assigned (should never happen, but TypeScript needs this)
+    if (!serviceIdToUse) {
+      return NextResponse.json(
+        { error: "Unable to determine service for booking. Please provide either a courseId or serviceId." },
+        { status: 400 }
+      );
     }
 
     // Calculate start and end times

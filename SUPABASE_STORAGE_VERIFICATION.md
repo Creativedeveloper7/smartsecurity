@@ -124,3 +124,4 @@ If you see errors about bucket not existing:
 2. Make sure `SUPABASE_SERVICE_ROLE_KEY` has storage admin permissions
 3. Check Supabase dashboard → Storage → Buckets to verify buckets exist
 
+

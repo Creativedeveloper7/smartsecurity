@@ -118,3 +118,4 @@ All user-uploaded media is stored in Prisma and references Supabase Storage URLs
 - Static design assets (logos, expertise images) remain hardcoded (intentional)
 - If you want to make static assets editable, consider creating a "SiteSettings" model
 
+

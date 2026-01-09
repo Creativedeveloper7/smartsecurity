@@ -137,3 +137,4 @@ To verify Supabase connection is working:
 5. ⏳ Run migration
 6. ⏳ Test login flow with password verification
 
+

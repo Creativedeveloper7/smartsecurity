@@ -132,3 +132,4 @@ const handleAddImageUrl = () => {
 - **Mixed Sources**: Products page uniquely supports mixing uploaded and URL images
 - **Database Storage**: URLs are stored directly in Prisma (no Supabase upload for URL inputs)
 
+

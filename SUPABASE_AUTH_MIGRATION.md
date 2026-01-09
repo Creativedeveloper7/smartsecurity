@@ -146,3 +146,4 @@ Run seed script or manual sync
 - ✅ Row Level Security (RLS) support
 - ✅ Better security practices
 
+
