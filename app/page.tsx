@@ -4,49 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
-interface GalleryImage {
-  id: string;
-  title: string;
-  description: string | null;
-  imageUrl: string;
-  order: number;
-  createdAt: Date | string;
-}
-
 export default function Home() {
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const galleryImages = [
+    "/gallery/President.jpeg",
+    "/gallery/US.jpeg",
+    "/gallery/Bishop.jpeg",
+    "/gallery/salute.jpeg",
+    "/gallery/service.jpeg",
+    "/gallery/Swearing.jpeg",
+    "/gallery/UN .jpeg",
+    "/images/DG.png",
+  ];
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
-
-  // Fetch gallery images from database
-  useEffect(() => {
-    const fetchGalleryImages = async () => {
-      try {
-        const response = await fetch("/api/gallery");
-        if (!response.ok) throw new Error("Failed to fetch gallery images");
-        const data = await response.json();
-        
-        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
-          // Extract image URLs from gallery images, sorted by order
-          const sortedImages = data.images
-            .sort((a: GalleryImage, b: GalleryImage) => a.order - b.order)
-            .map((img: GalleryImage) => img.imageUrl)
-            .filter((url: string) => url); // Filter out empty URLs
-          
-          setGalleryImages(sortedImages);
-        } else {
-          // Fallback to empty array if no images found
-          setGalleryImages([]);
-        }
-      } catch (err) {
-        console.error("Error fetching gallery images:", err);
-        // Fallback to empty array on error
-        setGalleryImages([]);
-      }
-    };
-
-    fetchGalleryImages();
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,28 +52,22 @@ export default function Home() {
       <section className="relative bg-white py-20 lg:py-32 overflow-hidden">
         {/* Full-width Background Image Carousel */}
         <div className="absolute inset-0">
-          {galleryImages.length > 0 ? (
-            galleryImages.map((image, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  index === currentImageIndex ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <Image
-                  src={image}
-                  alt={`Gallery image ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
-                  unoptimized={image.startsWith("http")} // Don't optimize external URLs
-                />
-              </div>
-            ))
-          ) : (
-            // Fallback gradient when no images are loaded
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0A1A33] to-[#005B6E]"></div>
-          )}
+          {galleryImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                index === currentImageIndex ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Image
+                src={image}
+                alt={`Gallery image ${index + 1}`}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </div>
+          ))}
           
           {/* Gradient Overlay - Fades from left (darker) to right (lighter) */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0A1A33]/90 via-[#0A1A33]/60 to-transparent"></div>
@@ -222,16 +187,14 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
               </div>
               
-              {/* Name Badge - Moved outside the image container */}
-              <div className="w-full max-w-[400px] -mt-6 px-6 z-10">
-                <div className="bg-gradient-to-r from-[#007CFF] to-[#005B6E] rounded-lg p-4 shadow-lg">
-                  <h3 className="text-white text-xl font-heading font-bold text-center mb-1">
-                    Bruno Shioso
-                  </h3>
-                  <p className="text-white/90 text-sm font-medium text-center">
-                    Distinguished Security Expert
-                  </p>
-                </div>
+              {/* Name and Title - Plain text below image */}
+              <div className="w-full max-w-[400px] mt-6 text-center">
+                <h3 className="text-[#0A1A33] text-2xl font-heading font-bold mb-2">
+                  Bruno Shioso
+                </h3>
+                <p className="text-[#4A5768] text-base font-medium">
+                  Distinguished Security Expert
+                </p>
               </div>
             </div>
 
