@@ -2,6 +2,9 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminLayout from "@/components/admin/AdminLayout";
 
+// Mark admin routes as dynamic since they use session/auth
+export const dynamic = 'force-dynamic';
+
 export default async function AdminRootLayout({
   children,
 }: {
