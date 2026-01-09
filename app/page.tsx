@@ -184,7 +184,7 @@ export default function Home() {
                 />
                 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                
               </div>
               
               {/* Name and Title - Plain text below image */}
