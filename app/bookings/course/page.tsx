@@ -239,11 +239,48 @@ function CourseBookingForm() {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        setIsSubmitted(true);
-        // Booking has been sent to admin dashboard - show success message
+        // If payment is required, redirect to payment checkout
+        if (data.requiresPayment && data.bookingId) {
+          try {
+            const paymentResponse = await fetch("/api/payments/checkout-booking", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                bookingId: data.bookingId,
+                customerEmail: formData.clientEmail.trim(),
+                customerName: formData.clientName.trim(),
+              }),
+            });
+
+            const paymentData = await paymentResponse.json();
+
+            if (paymentResponse.ok && paymentData.authorizationUrl) {
+              // Redirect to Paystack checkout
+              window.location.href = paymentData.authorizationUrl;
+              return;
+            } else {
+              // Payment initialization failed, but booking was created
+              setError(paymentData.error || "Booking created but payment initialization failed. Please contact support.");
+              setIsSubmitting(false);
+              return;
+            }
+          } catch (paymentError) {
+            console.error("Error initializing payment:", paymentError);
+            setError("Booking created but payment initialization failed. Please contact support.");
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          // No payment required or free booking
+          setIsSubmitted(true);
+        }
       } else {
-        alert("Failed to submit booking. Please try again.");
+        setError(data.error || "Failed to submit booking. Please try again.");
         setIsSubmitting(false);
       }
     } catch (error) {

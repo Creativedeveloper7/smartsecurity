@@ -24,9 +24,13 @@ export async function GET(request: Request) {
     const verification = await verifyTransaction(reference);
 
     // Find order by reference (stored in paymentIntent field)
+    // Also try orderNumber as fallback (in case Paystack uses our orderNumber as reference)
     const order = await prisma.order.findFirst({
       where: {
-        paymentIntent: reference,
+        OR: [
+          { paymentIntent: reference },
+          { orderNumber: reference }, // Fallback: Paystack might use our orderNumber as reference
+        ],
       },
       include: {
         items: {

@@ -41,10 +41,13 @@ export async function POST(request: Request) {
     if (event.event === "charge.success") {
       const transaction = event.data;
 
-      // Find order by reference
+      // Try to find order first
       const order = await prisma.order.findFirst({
         where: {
-          paymentIntent: transaction.reference,
+          OR: [
+            { paymentIntent: transaction.reference },
+            { orderNumber: transaction.reference },
+          ],
         },
         include: {
           items: {
@@ -55,54 +58,118 @@ export async function POST(request: Request) {
         },
       });
 
-      if (!order) {
-        console.error("Order not found for webhook reference:", transaction.reference);
-        // Still return 200 to acknowledge receipt
+      if (order) {
+        // Handle order payment
+        const expectedAmountInCents = Math.round(Number(order.total) * 100);
+        if (transaction.amount !== expectedAmountInCents) {
+          console.error("Amount mismatch in webhook for order:", {
+            expected: expectedAmountInCents,
+            received: transaction.amount,
+            reference: transaction.reference,
+          });
+          return NextResponse.json({ received: true });
+        }
+
+        if (order.paymentStatus === "PENDING") {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              paymentStatus: "PAID",
+              status: "PROCESSING",
+            },
+          });
+
+          // Update product stock for physical products
+          for (const item of order.items) {
+            if (!item.product.isDigital) {
+              await prisma.product.update({
+                where: { id: item.productId },
+                data: {
+                  stock: {
+                    decrement: item.quantity,
+                  },
+                },
+              });
+            }
+          }
+
+          console.log("✅ Order payment confirmed via webhook:", {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            reference: transaction.reference,
+          });
+        }
         return NextResponse.json({ received: true });
       }
 
-      // Verify amount matches
-      const expectedAmountInCents = Math.round(Number(order.total) * 100);
-      if (transaction.amount !== expectedAmountInCents) {
-        console.error("Amount mismatch in webhook:", {
-          expected: expectedAmountInCents,
-          received: transaction.amount,
-          reference: transaction.reference,
-        });
-        // Still return 200 to acknowledge receipt
-        return NextResponse.json({ received: true });
-      }
+      // If not an order, try to find booking
+      // Try bookingNumber first (most common case)
+      let booking = await prisma.booking.findFirst({
+        where: {
+          bookingNumber: transaction.reference,
+        },
+        include: {
+          service: true,
+        },
+      });
 
-      // Only update if order is still pending
-      if (order.paymentStatus === "PENDING") {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            paymentStatus: "PAID",
-            status: "PROCESSING",
+      // If not found by bookingNumber, try to find by payment reference in notes
+      if (!booking) {
+        const allBookings = await prisma.booking.findMany({
+          where: {
+            notes: {
+              contains: transaction.reference,
+            },
+          },
+          include: {
+            service: true,
           },
         });
 
-        // Update product stock for physical products
-        for (const item of order.items) {
-          if (!item.product.isDigital) {
-            await prisma.product.update({
-              where: { id: item.productId },
-              data: {
-                stock: {
-                  decrement: item.quantity,
-                },
-              },
-            });
-          }
+        booking = allBookings.find(b => 
+          b.notes?.includes(`[Payment Reference: ${transaction.reference}]`)
+        ) || null;
+      }
+
+      if (booking) {
+        // Handle booking payment
+        const expectedAmountInCents = Math.round(Number(booking.price) * 100);
+        if (transaction.amount !== expectedAmountInCents) {
+          console.error("Amount mismatch in webhook for booking:", {
+            expected: expectedAmountInCents,
+            received: transaction.amount,
+            reference: transaction.reference,
+          });
+          return NextResponse.json({ received: true });
         }
 
-        console.log("✅ Order payment confirmed via webhook:", {
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          reference: transaction.reference,
-        });
+        if (!booking.paid) {
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              paid: true,
+              status: "CONFIRMED",
+              notes: booking.notes 
+                ? booking.notes.replace(
+                    /\[Payment Reference: [^\]]+\]/g,
+                    `[Payment Reference: ${transaction.reference} - PAID]`
+                  )
+                : `[Payment Reference: ${transaction.reference} - PAID]`,
+            },
+          });
+
+          console.log("✅ Booking payment confirmed via webhook:", {
+            bookingId: booking.id,
+            bookingNumber: booking.bookingNumber,
+            reference: transaction.reference,
+          });
+        }
+        return NextResponse.json({ received: true });
       }
+
+      // If neither order nor booking found, log and acknowledge
+      console.error("Neither order nor booking found for webhook reference:", transaction.reference);
+      return NextResponse.json({ received: true });
     }
 
     // Always return 200 OK to acknowledge receipt

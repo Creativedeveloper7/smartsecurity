@@ -108,12 +108,45 @@ export default function CourseDetailPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to submit booking");
+        throw new Error(data.error || data.message || "Failed to submit booking");
       }
 
-      setIsSubmitted(true);
+      // If payment is required, redirect to payment checkout
+      if (data.requiresPayment && data.bookingId) {
+        try {
+          const paymentResponse = await fetch("/api/payments/checkout-booking", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              bookingId: data.bookingId,
+              customerEmail: formData.clientEmail.trim(),
+              customerName: formData.clientName.trim(),
+            }),
+          });
+
+          const paymentData = await paymentResponse.json();
+
+          if (paymentResponse.ok && paymentData.authorizationUrl) {
+            // Redirect to Paystack checkout
+            window.location.href = paymentData.authorizationUrl;
+            return;
+          } else {
+            // Payment initialization failed, but booking was created
+            throw new Error(paymentData.error || "Booking created but payment initialization failed. Please contact support.");
+          }
+        } catch (paymentError) {
+          console.error("Error initializing payment:", paymentError);
+          throw new Error(paymentError instanceof Error ? paymentError.message : "Booking created but payment initialization failed. Please contact support.");
+        }
+      } else {
+        // No payment required or free booking
+        setIsSubmitted(true);
+      }
     } catch (err) {
       console.error("Error submitting booking:", err);
       setError(err instanceof Error ? err.message : "Failed to submit booking. Please try again.");
