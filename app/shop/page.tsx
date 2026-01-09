@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface Product {
@@ -19,6 +20,7 @@ interface Product {
 const productCategories = ["All", "Publications", "Digital Downloads", "Merchandise", "Reports", "Training Materials"];
 
 export default function ShopPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,7 +99,7 @@ export default function ShopPage() {
   const handleCheckout = () => {
     if (!selectedProduct) return;
     // Redirect to checkout page with product ID
-    window.location.href = `/checkout?product=${selectedProduct.id}`;
+    router.push(`/checkout?product=${selectedProduct.id}`);
   };
 
   if (loading) {
@@ -166,7 +168,7 @@ export default function ShopPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 pl-10 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
               />
-              <i className="fa-regular fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
+              <i className="fa-solid fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
@@ -260,7 +262,7 @@ export default function ShopPage() {
           </div>
         ) : (
           <div className="py-12 text-center">
-            <i className="fa-regular fa-bag-shopping fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
+            <i className="fa-solid fa-bag-shopping fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
             <p className="text-sm text-[#4A5768]">
               No products found matching your criteria.
             </p>
@@ -398,7 +400,7 @@ export default function ShopPage() {
                       onClick={handleShare}
                       className="w-full rounded-lg border border-[#E5E7EB] bg-white px-6 py-3 text-base font-medium text-[#2D3748] transition-all hover:bg-[#F3F4F6] flex items-center justify-center gap-2"
                     >
-                      <i className="fa-regular fa-share-nodes fa-text"></i>
+                      <i className="fa-solid fa-share-nodes fa-text"></i>
                       Share Product
                     </button>
                   </div>
@@ -407,12 +409,12 @@ export default function ShopPage() {
                   <div className="mt-6 pt-6 border-t border-[#E5E7EB]">
                     <div className="space-y-2 text-xs text-[#4A5768]">
                       <div className="flex items-center gap-2">
-                        <i className="fa-regular fa-box fa-text"></i>
+                        <i className="fa-solid fa-box fa-text"></i>
                         <span>SKU: {selectedProduct.slug}</span>
                       </div>
                       {selectedProduct.createdAt && (
                         <div className="flex items-center gap-2">
-                          <i className="fa-regular fa-calendar fa-text"></i>
+                          <i className="fa-solid fa-calendar fa-text"></i>
                           <span>
                             Added {new Date(selectedProduct.createdAt).toLocaleDateString("en-US", {
                               month: "long",

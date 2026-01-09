@@ -5,7 +5,8 @@ import { useEffect } from "react";
 export function FontAwesomeLoader() {
   useEffect(() => {
     // Check if Font Awesome is already loaded
-    if (document.querySelector('link[href*="font-awesome"]')) {
+    const existingLink = document.querySelector('link[href*="font-awesome"]') as HTMLLinkElement;
+    if (existingLink && existingLink.sheet) {
       return;
     }
 
@@ -17,13 +18,22 @@ export function FontAwesomeLoader() {
     link.crossOrigin = "anonymous";
     link.referrerPolicy = "no-referrer";
     
+    // Add error handling
+    link.onerror = () => {
+      console.error("Failed to load Font Awesome stylesheet");
+    };
+    
+    link.onload = () => {
+      console.log("Font Awesome stylesheet loaded successfully");
+    };
+    
     document.head.appendChild(link);
 
     return () => {
       // Cleanup on unmount (optional)
-      const existingLink = document.querySelector('link[href*="font-awesome"]');
-      if (existingLink) {
-        existingLink.remove();
+      const linkToRemove = document.querySelector('link[href*="font-awesome"]');
+      if (linkToRemove) {
+        linkToRemove.remove();
       }
     };
   }, []);

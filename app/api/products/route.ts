@@ -6,17 +6,34 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const { searchParams } = requestUrl;
+  const id = searchParams.get("id");
   const category = searchParams.get("category");
   const search = searchParams.get("search");
 
   console.log("📥 [GET /api/products]", {
     url: requestUrl.pathname + requestUrl.search,
+    id,
     category,
     search,
     timestamp: new Date().toISOString(),
   });
 
   try {
+    // If ID is provided, return single product
+    if (id) {
+      const product = await prisma.product.findUnique({
+        where: { id },
+      });
+
+      if (!product) {
+        return NextResponse.json(
+          { error: "Product not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ product });
+    }
 
     const where: any = {};
 

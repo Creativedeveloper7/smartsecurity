@@ -375,7 +375,7 @@ export default function Home() {
               className="group rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
-                <i className="fa-regular fa-book fa-subtitle text-2xl"></i>
+                <i className="fa-solid fa-book-open fa-subtitle text-2xl"></i>
               </div>
               <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Articles
@@ -394,7 +394,7 @@ export default function Home() {
               className="group rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
-                <i className="fa-regular fa-video fa-subtitle text-2xl"></i>
+                <i className="fa-solid fa-video fa-subtitle text-2xl"></i>
               </div>
               <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Videos
@@ -413,7 +413,7 @@ export default function Home() {
               className="group rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
-                <i className="fa-regular fa-trophy fa-subtitle text-2xl"></i>
+                <i className="fa-solid fa-trophy fa-subtitle text-2xl"></i>
               </div>
               <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Shop
@@ -432,7 +432,7 @@ export default function Home() {
               className="group rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">
-                <i className="fa-regular fa-calendar fa-subtitle text-2xl"></i>
+                <i className="fa-solid fa-calendar fa-subtitle text-2xl"></i>
               </div>
               <h3 className="mb-2 text-base font-heading font-semibold text-[#1F2937]">
                 Consultation
@@ -459,12 +459,12 @@ export default function Home() {
                 description: "Extensive certifications in security and law enforcement",
               },
               {
-                icon: "fa-regular fa-users",
+                icon: "fa-solid fa-users",
                 title: "Trusted Advisor",
                 description: "Serving high-profile clients and government institutions",
               },
               {
-                icon: "fa-regular fa-trophy",
+                icon: "fa-solid fa-trophy",
                 title: "Proven Track Record",
                 description: "Decades of successful security operations and consultations",
               },

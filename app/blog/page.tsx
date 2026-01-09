@@ -233,7 +233,7 @@ export default function BlogPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 pl-10 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
               />
-              <i className="fa-regular fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
+              <i className="fa-solid fa-magnifying-glass fa-text absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5768]"></i>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
@@ -326,7 +326,7 @@ export default function BlogPage() {
                       {publishedDate && (
                         <div className="flex items-center gap-4 text-xs font-medium text-[#4A5768]">
                           <div className="flex items-center gap-1">
-                            <i className="fa-regular fa-calendar fa-text"></i>
+                            <i className="fa-solid fa-calendar fa-text"></i>
                             {publishedDate.toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -334,7 +334,7 @@ export default function BlogPage() {
                             })}
                           </div>
                           <div className="flex items-center gap-1">
-                            <i className="fa-regular fa-clock fa-text"></i>
+                            <i className="fa-solid fa-clock fa-text"></i>
                             {readingTime} min read
                           </div>
                         </div>
@@ -351,7 +351,7 @@ export default function BlogPage() {
             </div>
           ) : (
             <div className="py-12 text-center">
-              <i className="fa-regular fa-magnifying-glass fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
+              <i className="fa-solid fa-magnifying-glass fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
               <p className="text-sm text-[#4A5768]">
                 No articles found matching your search criteria.
               </p>

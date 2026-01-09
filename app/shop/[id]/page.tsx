@@ -81,12 +81,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-2 text-sm text-[#4A5768]">
               {mockProduct.isDigital ? (
                 <>
-                  <i className="fa-regular fa-download fa-text"></i>
+                  <i className="fa-solid fa-download fa-text"></i>
                   <span>Digital Download - Instant Access</span>
                 </>
               ) : (
                 <>
-                  <i className="fa-regular fa-box fa-text"></i>
+                  <i className="fa-solid fa-box fa-text"></i>
                   <span>In Stock ({mockProduct.stock} available)</span>
                 </>
               )}

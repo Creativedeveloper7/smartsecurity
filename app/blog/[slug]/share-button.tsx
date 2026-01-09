@@ -25,7 +25,7 @@ export function ShareButton({ title, excerpt }: { title: string; excerpt: string
       onClick={handleShare}
       className="flex items-center gap-2 hover:text-[#007CFF] transition-colors"
     >
-      <i className="fa-regular fa-share-nodes fa-text"></i>
+      <i className="fa-solid fa-share-nodes fa-text"></i>
       Share
     </button>
   );

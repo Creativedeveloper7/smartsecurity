@@ -147,7 +147,35 @@ button, .btn {
   }
 }
 
-/* Font Awesome Utility Classes */
+/* Ensure Font Awesome icons inherit proper styling */
+[class^="fa-"],
+[class*=" fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro" !important;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Font Awesome icon type classes - MUST have highest priority for font-weight */
+/* Solid icons require font-weight 900 - this must override utility classes */
+.fa-solid,
+.fa-solid.fa-title,
+.fa-solid.fa-subtitle,
+.fa-solid.fa-text {
+  font-weight: 900 !important;
+}
+
+/* Regular icons require font-weight 400 - this must override utility classes */
+.fa-regular,
+.fa-regular.fa-title,
+.fa-regular.fa-subtitle,
+.fa-regular.fa-text {
+  font-weight: 400 !important;
+}
+
+/* Font Awesome Utility Classes - only apply when icon type is not specified */
 .fa-title {
   font-weight: 900 !important;
 }
@@ -158,17 +186,6 @@ button, .btn {
 
 .fa-text {
   font-weight: 400 !important;
-}
-
-/* Ensure Font Awesome icons inherit proper styling */
-[class^="fa-"],
-[class*=" fa-"] {
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro" !important;
-  font-style: normal;
-  font-variant: normal;
-  text-rendering: auto;
-  line-height: 1;
-  display: inline-block;
 }
 
 /* Article Modal Prose Styling */

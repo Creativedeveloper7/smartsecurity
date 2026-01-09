@@ -169,7 +169,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-[#4A5768]">
             {publishedDate && (
             <div className="flex items-center gap-2">
-              <i className="fa-regular fa-calendar fa-text"></i>
+              <i className="fa-solid fa-calendar fa-text"></i>
                 {publishedDate.toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
@@ -178,11 +178,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             </div>
             )}
             <div className="flex items-center gap-2">
-              <i className="fa-regular fa-clock fa-text"></i>
+              <i className="fa-solid fa-clock fa-text"></i>
               {readingTime} min read
             </div>
             <div className="flex items-center gap-2">
-              <i className="fa-regular fa-eye fa-text"></i>
+              <i className="fa-solid fa-eye fa-text"></i>
               {article.views.toLocaleString()} views
             </div>
             <ShareButton title={article.title} excerpt={article.excerpt || ""} />

@@ -174,7 +174,7 @@ export default function CoursesPage() {
             </div>
           ) : (
             <div className="py-12 text-center">
-              <i className="fa-regular fa-graduation-cap fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
+              <i className="fa-solid fa-graduation-cap fa-subtitle mb-4 text-4xl text-[#4A5768]"></i>
               <p className="text-sm text-[#4A5768]">No courses available at the moment.</p>
             </div>
           )}
@@ -316,7 +316,7 @@ export default function CoursesPage() {
                       onClick={handleShare}
                       className="w-full rounded-lg border border-[#E5E7EB] bg-white px-6 py-3 text-base font-medium text-[#2D3748] transition-all hover:bg-[#F3F4F6] flex items-center justify-center gap-2"
                     >
-                      <i className="fa-regular fa-share-nodes fa-text"></i>
+                      <i className="fa-solid fa-share-nodes fa-text"></i>
                       Share Course
                     </button>
                   </div>
