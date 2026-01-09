@@ -9,7 +9,7 @@ A complete, production-ready professional website for SmartSecurity Consult - ex
 - **Videos**: YouTube integration with categories and filtering
 - **E-Commerce Shop**: Product listings, shopping cart, and checkout
 - **Booking System**: Consultation booking with calendar integration
-- **Admin Dashboard**: Complete CRM with content management, analytics, and settings
+- **Admin Dashboard**: Complete CRM with content management, analytics, and settings   
 
 ## Tech Stack
 
