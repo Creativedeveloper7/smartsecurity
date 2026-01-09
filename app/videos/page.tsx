@@ -40,6 +40,7 @@ export default function VideosPage() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
+  const [showCustomPlay, setShowCustomPlay] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,6 +108,7 @@ export default function VideosPage() {
     setSelectedVideo(video);
     setIsModalOpen(true);
     setVideoReady(false);
+    setShowCustomPlay(true); // Show custom play button initially
     document.body.style.overflow = "hidden";
   };
 
@@ -119,7 +121,22 @@ export default function VideosPage() {
     setIsModalOpen(false);
     setSelectedVideo(null);
     setVideoReady(false);
+    setShowCustomPlay(false);
     document.body.style.overflow = "unset";
+  };
+
+  // Handle custom play button click for mobile
+  const handleCustomPlay = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      await video.play();
+      setShowCustomPlay(false); // Hide custom button once playing
+      console.log('Custom play button triggered video playback');
+    } catch (error) {
+      console.error('Failed to play video:', error);
+    }
   };
 
 
@@ -437,31 +454,22 @@ export default function VideosPage() {
       {/* Video Modal */}
       {isModalOpen && selectedVideo && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4"
           onClick={(e) => {
-            // Only close if clicking the backdrop itself, not children
+            // Only close if clicking the backdrop itself
             if (e.target === e.currentTarget) {
               closeModal();
             }
           }}
         >
-          <div
-            className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl"
-            onClick={(e) => {
-              // Only stop propagation if NOT clicking on video element
-              const target = e.target as HTMLElement;
-              if (target.tagName !== 'VIDEO' && !target.closest('video')) {
-                e.stopPropagation();
-              }
-            }}
-          >
-            {/* Close Button */}
+          <div className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl">
+            {/* Close Button - positioned to not interfere with video */}
             <button
               onClick={closeModal}
-              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[#2D3748] shadow-lg transition-colors hover:bg-white hover:text-[#007CFF]"
+              className="absolute right-2 top-2 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white shadow-lg transition-colors hover:bg-black/90"
               aria-label="Close modal"
             >
-              <i className="fa-solid fa-xmark fa-text text-xl"></i>
+              <i className="fa-solid fa-xmark fa-text text-sm"></i>
             </button>
 
             {/* Modal Content */}
@@ -504,7 +512,7 @@ export default function VideosPage() {
               </div>
 
               {/* Video Player */}
-              <div className="p-8">
+              <div className="p-4 sm:p-8">
                 {selectedVideo.youtubeUrl ? (
                   <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
                     <iframe
@@ -516,35 +524,95 @@ export default function VideosPage() {
                     />
                   </div>
                 ) : selectedVideo.uploadUrl ? (
-                  <video
-                    ref={videoRef}
-                    src={selectedVideo.uploadUrl}
-                    controls
-                    controlsList="nodownload"
-                    playsInline
-                    webkit-playsinline="true"
-                    x5-playsinline="true"
-                    preload="metadata"
-                    className="w-full rounded-lg"
-                    style={{ 
-                      aspectRatio: '16/9',
-                      touchAction: 'manipulation'
-                    }}
-                    onPlay={() => {
-                      setVideoReady(true);
-                    }}
-                    onLoadedMetadata={() => {
-                      if (videoRef.current) {
-                        videoRef.current.currentTime = 0;
+                  <div className="relative w-full">
+                    <video
+                      ref={videoRef}
+                      src={selectedVideo.uploadUrl}
+                      controls
+                      playsInline
+                      webkit-playsinline
+                      x5-playsinline
+                      x-webkit-airplay="allow"
+                      preload="auto"
+                      className="w-full h-auto rounded-lg bg-black"
+                      style={{ 
+                        maxWidth: '100%',
+                        height: 'auto',
+                        display: 'block'
+                      }}
+                      onPlay={() => {
+                        console.log('Video started playing');
                         setVideoReady(true);
-                      }
-                    }}
-                    onError={(e) => {
-                      console.error('Video error:', e);
-                    }}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                        setShowCustomPlay(false);
+                      }}
+                      onPause={() => {
+                        console.log('Video paused');
+                        setShowCustomPlay(true);
+                      }}
+                      onLoadedMetadata={() => {
+                        console.log('Video metadata loaded');
+                        if (videoRef.current) {
+                          videoRef.current.currentTime = 0;
+                          setVideoReady(true);
+                        }
+                      }}
+                      onCanPlay={() => {
+                        console.log('Video can play');
+                        setVideoReady(true);
+                      }}
+                      onError={(e) => {
+                        console.error('Video error:', e);
+                        const video = e.target as HTMLVideoElement;
+                        console.error('Video error details:', {
+                          error: video.error,
+                          networkState: video.networkState,
+                          readyState: video.readyState,
+                          src: video.src
+                        });
+                      }}
+                      onLoadStart={() => {
+                        console.log('Video load started');
+                      }}
+                      onProgress={() => {
+                        console.log('Video loading progress');
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Video element clicked');
+                      }}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        console.log('Video element touched');
+                      }}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                    
+                    {/* Custom play button for mobile fallback */}
+                    {showCustomPlay && videoReady && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleCustomPlay();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleCustomPlay();
+                        }}
+                        className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity"
+                        style={{ 
+                          zIndex: 5,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                          <i className="fa-solid fa-play fa-text text-2xl text-[#007CFF] ml-1"></i>
+                        </div>
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="aspect-video flex items-center justify-center rounded-lg bg-black text-white">
                     <p>No video source available</p>
