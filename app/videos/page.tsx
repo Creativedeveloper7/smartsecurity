@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Video {
   id: string;
@@ -38,6 +38,7 @@ export default function VideosPage() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -108,6 +109,11 @@ export default function VideosPage() {
   };
 
   const closeModal = () => {
+    // Pause video if playing
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
     setIsModalOpen(false);
     setSelectedVideo(null);
     document.body.style.overflow = "unset";
@@ -429,10 +435,17 @@ export default function VideosPage() {
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
           onClick={closeModal}
+          onTouchStart={(e) => {
+            // Only close if clicking the backdrop, not the modal content
+            if (e.target === e.currentTarget) {
+              closeModal();
+            }
+          }}
         >
           <div
             className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
             <button
@@ -484,7 +497,12 @@ export default function VideosPage() {
 
               {/* Video Player */}
               <div className="p-8">
-                <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+                <div 
+                  className="aspect-video w-full overflow-hidden rounded-lg bg-black"
+                  onClick={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  style={{ touchAction: 'manipulation' }}
+                >
                   {selectedVideo.youtubeUrl ? (
                     <iframe
                       src={getYouTubeEmbedUrl(selectedVideo.youtubeUrl)}
@@ -492,12 +510,49 @@ export default function VideosPage() {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       className="h-full w-full"
+                      style={{ pointerEvents: 'auto' }}
                     />
                   ) : selectedVideo.uploadUrl ? (
                     <video
+                      ref={videoRef}
                       src={selectedVideo.uploadUrl}
                       controls
+                      playsInline
+                      preload="metadata"
                       className="h-full w-full"
+                      style={{ 
+                        pointerEvents: 'auto', 
+                        touchAction: 'manipulation',
+                        WebkitTouchCallout: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Prevent modal from closing when clicking video controls
+                        const target = e.target as HTMLElement;
+                        if (target.tagName === 'VIDEO' || target.closest('video')) {
+                          e.stopPropagation();
+                        }
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onPlay={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onPause={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onLoadedMetadata={() => {
+                        // Ensure video is ready but don't autoplay
+                        if (videoRef.current) {
+                          videoRef.current.currentTime = 0;
+                        }
+                      }}
                     >
                       Your browser does not support the video tag.
                     </video>
