@@ -113,7 +113,7 @@ export default function Home() {
                   <i className="fa-solid fa-arrow-right fa-text ml-2"></i>
                 </Link>
                 <Link
-                  href="/bookings"
+                  href="/bookings/consultation"
                   className="inline-flex items-center justify-center rounded-lg border-2 border-white bg-transparent px-8 py-3 text-base font-medium text-white transition-all hover:bg-white/10 hover:border-white/80"
                 >
                   Book Consultation
@@ -426,7 +426,7 @@ export default function Home() {
 
             {/* Bookings Card */}
             <Link
-              href="/bookings"
+              href="/bookings/consultation"
               className="group rounded-lg border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all hover:border-[#007CFF] hover:shadow-lg"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[#F3F4F6] text-[#005B6E] group-hover:bg-[#007CFF] group-hover:text-white transition-colors">

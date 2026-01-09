@@ -23,9 +23,9 @@ export async function POST(request: Request) {
     } = await request.json();
 
     // Basic validation
-    if ((!courseId && !serviceId) || !clientName || !clientEmail || !clientPhone) {
+    if (!clientName || !clientEmail || !clientPhone) {
       return NextResponse.json(
-        { error: "Missing required fields: either courseId or serviceId, clientName, clientEmail, and clientPhone are required" },
+        { error: "Missing required fields: clientName, clientEmail, and clientPhone are required" },
         { status: 400 }
       );
     }
@@ -33,6 +33,32 @@ export async function POST(request: Request) {
     let serviceIdToUse: string;
     let bookingPrice: number = 0;
     let bookingDuration: number = 60; // Default 1 hour in minutes
+
+    // If no courseId or serviceId provided, create or find a default "General Consultation" service
+    if (!courseId && !serviceId) {
+      let generalService = await prisma.service.findFirst({
+        where: {
+          name: "General Consultation",
+        },
+      });
+
+      if (!generalService) {
+        // Create a default general consultation service
+        generalService = await prisma.service.create({
+          data: {
+            name: "General Consultation",
+            description: "General security consultation and advisory services",
+            duration: 60, // 1 hour
+            price: 0, // Free consultation by default
+            active: true,
+          },
+        });
+      }
+
+      serviceIdToUse = generalService.id;
+      bookingPrice = Number(generalService.price);
+      bookingDuration = generalService.duration;
+    }
 
     // Handle course bookings - find or create a service for the course
     if (courseId) {
@@ -80,7 +106,7 @@ export async function POST(request: Request) {
       serviceIdToUse = courseService.id;
       bookingPrice = Number(courseService.price);
       bookingDuration = courseService.duration;
-    } else {
+    } else if (serviceId) {
       // Direct service booking
       serviceIdToUse = serviceId;
       
