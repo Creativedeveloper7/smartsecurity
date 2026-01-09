@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { DeleteButton } from "./delete-button";
 
 export const dynamic = 'force-dynamic';
 
@@ -122,9 +123,10 @@ export default async function AdminVideosPage() {
                       >
                         Edit
                       </Link>
-                      <button className="text-xs text-red-600 hover:text-red-800 transition-colors">
-                        Delete
-                      </button>
+                      <DeleteButton 
+                        videoId={video.id} 
+                        videoTitle={video.title}
+                      />
                     </div>
                   </div>
                 </div>

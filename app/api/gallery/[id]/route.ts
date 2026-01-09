@@ -4,6 +4,35 @@ import { getSession } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
 
+// GET - Get a single gallery image by ID
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const image = await prisma.galleryImage.findUnique({
+      where: { id },
+    });
+
+    if (!image) {
+      return NextResponse.json(
+        { error: "Gallery image not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(image);
+  } catch (error: any) {
+    console.error("❌ [GET /api/gallery/[id]] Error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch gallery image" },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT - Update a gallery image
 export async function PUT(
   request: Request,

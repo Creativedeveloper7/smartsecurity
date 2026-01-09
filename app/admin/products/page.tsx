@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { DeleteButton } from "./delete-button";
 
 export const dynamic = 'force-dynamic';
 
@@ -149,9 +150,10 @@ export default async function AdminProductsPage() {
                           >
                             Edit
                           </Link>
-                          <button className="text-red-600 hover:text-red-800 transition-colors">
-                            Delete
-                          </button>
+                          <DeleteButton 
+                            productId={product.id} 
+                            productName={product.name}
+                          />
                         </div>
                       </td>
                     </tr>

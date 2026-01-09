@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 // @ts-ignore - module resolution is available at runtime
 import { createClient } from "@supabase/supabase-js";
 
@@ -9,13 +7,23 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Use the IMAGES bucket that exists in Supabase
 const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "IMAGES";
 
-// Fallback to local filesystem if Supabase is not configured
-const USE_LOCAL_STORAGE = !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY;
-
 export async function POST(request: Request) {
   try {
-    if (USE_LOCAL_STORAGE) {
-      console.log("📁 Using local filesystem storage (Supabase not configured)");
+    // Validate Supabase configuration
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("❌ Supabase configuration missing:", {
+        hasUrl: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      });
+      return NextResponse.json(
+        { 
+          error: "File upload is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.",
+          details: process.env.NODE_ENV === "development" 
+            ? "Supabase storage is required for file uploads. Local filesystem is not supported in serverless environments."
+            : undefined
+        },
+        { status: 500 }
+      );
     }
 
     const formData = await request.formData();
@@ -52,47 +60,8 @@ export async function POST(request: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const fileName = `${timestamp}_${safeName}`;
 
-    // Use local storage if Supabase is not configured
-    if (USE_LOCAL_STORAGE) {
-      const uploadsDir = join(process.cwd(), "public", "uploads");
-      
-      // Ensure uploads directory exists
-      try {
-        await mkdir(uploadsDir, { recursive: true });
-      } catch (error: any) {
-        if (error.code !== "EEXIST") {
-          console.error("Error creating uploads directory:", error);
-          throw error;
-        }
-      }
-
-      // Convert file to buffer
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Write file to disk
-      const filePath = join(uploadsDir, fileName);
-      await writeFile(filePath, buffer);
-
-      // Return public URL
-      const publicUrl = `/uploads/${fileName}`;
-      
-      console.log("✅ File uploaded to local storage:", {
-        path: filePath,
-        url: publicUrl,
-        size: file.size,
-      });
-
-      return NextResponse.json({
-        success: true,
-        url: publicUrl,
-        path: fileName,
-        bucket: "local",
-      });
-    }
-
-    // Use Supabase Storage
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Use Supabase Storage (required for serverless environments)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Determine upload type from query parameter or default to 'general'
     const url = new URL(request.url);

@@ -6,13 +6,23 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABAS
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_VIDEO_BUCKET = "VIDEOS"; // Use the VIDEOS bucket that exists in Supabase
 
-// Fallback to local filesystem if Supabase is not configured
-const USE_LOCAL_STORAGE = !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY;
-
 export async function POST(request: Request) {
   try {
-    if (USE_LOCAL_STORAGE) {
-      console.log("📁 Using local filesystem storage for videos (Supabase not configured)");
+    // Validate Supabase configuration
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("❌ Supabase configuration missing:", {
+        hasUrl: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      });
+      return NextResponse.json(
+        { 
+          error: "Video upload is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.",
+          details: process.env.NODE_ENV === "development" 
+            ? "Supabase storage is required for video uploads. Local filesystem is not supported in serverless environments."
+            : undefined
+        },
+        { status: 500 }
+      );
     }
 
     const formData = await request.formData();
@@ -54,46 +64,8 @@ export async function POST(request: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const fileName = `${timestamp}_${safeName}`;
 
-    // Use local storage if Supabase is not configured
-    if (USE_LOCAL_STORAGE) {
-      const { writeFile, mkdir } = await import("fs/promises");
-      const { join } = await import("path");
-      const { existsSync } = await import("fs");
-
-      // Create uploads/videos directory if it doesn't exist
-      const uploadsDir = join(process.cwd(), "public", "uploads", "videos");
-      if (!existsSync(uploadsDir)) {
-        await mkdir(uploadsDir, { recursive: true });
-      }
-
-      const filepath = join(uploadsDir, fileName);
-
-      // Convert file to buffer and save
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await writeFile(filepath, buffer);
-
-      // Return the public URL
-      const publicUrl = `/uploads/videos/${fileName}`;
-
-      console.log("✅ Video uploaded to local storage:", {
-        path: filepath,
-        url: publicUrl,
-        size: file.size,
-      });
-
-      return NextResponse.json({
-        success: true,
-        url: publicUrl,
-        filename: fileName,
-        size: file.size,
-        type: file.type,
-        bucket: "local",
-      });
-    }
-
-    // Use Supabase Storage
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    // Use Supabase Storage (required for serverless environments)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Determine upload type from query parameter or default to 'general'
     const url = new URL(request.url);

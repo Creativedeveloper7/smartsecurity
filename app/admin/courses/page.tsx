@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DeleteButton } from "./delete-button";
 
 interface Course {
   id: string;
@@ -38,20 +39,6 @@ export default function CoursesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this course?")) return;
-
-    try {
-      const response = await fetch(`/api/courses/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to delete course");
-      fetchCourses();
-    } catch (err: any) {
-      alert(err.message || "Failed to delete course");
-    }
-  };
 
   if (loading) {
     return (
@@ -169,12 +156,10 @@ export default function CoursesPage() {
                         >
                           Edit
                         </Link>
-                        <button
-                          onClick={() => handleDelete(course.id)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                        >
-                          Delete
-                        </button>
+                        <DeleteButton 
+                          courseId={course.id} 
+                          courseTitle={course.title}
+                        />
                       </div>
                     </td>
                   </tr>

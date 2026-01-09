@@ -4,19 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface DeleteButtonProps {
-  imageId: string;
-  imageTitle: string;
+  videoId: string;
+  videoTitle: string;
 }
 
-export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
+export function DeleteButton({ videoId, videoTitle }: DeleteButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleDeleteClick = () => {
     setShowDialog(true);
     setError("");
   };
@@ -31,13 +30,14 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
     setError("");
 
     try {
-      const response = await fetch(`/api/gallery/${imageId}`, {
+      const response = await fetch(`/api/videos/${videoId}`, {
         method: "DELETE",
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete gallery image");
+        throw new Error(data.error || "Failed to delete video");
       }
 
       // Close dialog and show success
@@ -52,8 +52,8 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
         setShowSuccess(false);
       }, 2000);
     } catch (err: any) {
-      console.error("Error deleting gallery image:", err);
-      setError(err.message || "Failed to delete gallery image");
+      console.error("Error deleting video:", err);
+      setError(err.message || "Failed to delete video");
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
       <button
         onClick={handleDeleteClick}
         disabled={loading}
-        className="flex-1 text-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="text-xs text-red-600 hover:text-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Delete
       </button>
@@ -97,11 +97,11 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
               </div>
 
               <h3 className="mb-2 text-center text-lg font-semibold text-[#0A1A33]">
-                Delete Gallery Image
+                Delete Video
               </h3>
 
               <p className="mb-6 text-center text-sm text-[#4A5768]">
-                Are you sure you want to delete <span className="font-medium text-[#0A1A33]">"{imageTitle}"</span>?
+                Are you sure you want to delete <span className="font-medium text-[#0A1A33]">"{videoTitle}"</span>?
                 <br />
                 <span className="mt-1 block text-xs text-red-600">
                   This action cannot be undone.
@@ -148,7 +148,7 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
           <div className="flex items-center gap-2">
             <i className="fa-solid fa-check-circle fa-text text-green-600"></i>
             <span className="text-sm font-medium text-green-700">
-              Gallery image deleted successfully!
+              Video deleted successfully!
             </span>
           </div>
         </div>
@@ -156,4 +156,3 @@ export function DeleteButton({ imageId, imageTitle }: DeleteButtonProps) {
     </>
   );
 }
-

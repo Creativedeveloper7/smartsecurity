@@ -18,4 +18,3 @@ export function generateOrderNumber(): string {
 export function generateBookingNumber(): string {
   return `BKG-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 }
-

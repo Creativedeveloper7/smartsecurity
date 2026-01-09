@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
-export default function NewArticlePage() {
+export default function EditArticlePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const articleSlug = params?.slug as string;
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -30,86 +34,95 @@ export default function NewArticlePage() {
     { id: "criminal-justice", name: "Criminal Justice", slug: "criminal-justice" },
   ];
 
-  // Auto-generate slug from title
+  // Fetch article data on mount
+  useEffect(() => {
+    const fetchArticle = async () => {
+      if (!articleSlug) {
+        setError("Article identifier is required");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/articles/${articleSlug}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch article");
+        }
+        const article = await response.json();
+        
+        // Map categories to category slugs for form
+        const categorySlugs = article.categories?.map((cat: any) => cat.slug) || [];
+        
+        setFormData({
+          title: article.title || "",
+          slug: article.slug || "",
+          excerpt: article.excerpt || "",
+          content: article.content || "",
+          featuredImage: article.featuredImage || "",
+          published: article.published || false,
+          categoryIds: categorySlugs,
+        });
+        
+        if (article.featuredImage) {
+          setImagePreview(article.featuredImage);
+        }
+      } catch (err: any) {
+        console.error("Error fetching article:", err);
+        setError(err.message || "Failed to load article");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [articleSlug]);
+
+  // Auto-generate slug from title (only if slug is empty or matches auto-generated pattern)
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
+    const autoSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    
+    // Only auto-update slug if it's currently empty or matches the old auto-generated pattern
     setFormData((prev) => ({
       ...prev,
       title,
-      slug: title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, ""),
+      slug: prev.slug === "" || prev.slug === autoSlug ? autoSlug : prev.slug,
     }));
   };
 
-  // Debug: Log when featuredImage changes
-  useEffect(() => {
-    console.log("🔄 formData.featuredImage changed:", formData.featuredImage || "(empty)");
-  }, [formData.featuredImage]);
-
-  const handleCategoryToggle = (categoryId: string) => {
+  const handleCategoryToggle = (categorySlug: string) => {
     setFormData((prev) => ({
       ...prev,
-      categoryIds: prev.categoryIds.includes(categoryId)
-        ? prev.categoryIds.filter((id) => id !== categoryId)
-        : [...prev.categoryIds, categoryId],
+      categoryIds: prev.categoryIds.includes(categorySlug)
+        ? prev.categoryIds.filter((id) => id !== categorySlug)
+        : [...prev.categoryIds, categorySlug],
     }));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("📁 File input changed", e.target.files);
     const file = e.target.files?.[0];
     if (!file) {
-      console.log("❌ No file selected - files array:", e.target.files);
       setError("No file selected. Please choose an image file.");
       return;
     }
-    console.log("📄 File selected:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      lastModified: file.lastModified,
-    });
 
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      const errorMsg = "Invalid file type. Please upload an image (JPEG, PNG, WebP, or GIF).";
-      console.error("❌ Invalid file type:", file.type);
-      setError(errorMsg);
-      setUploadingImage(false);
+      setError("Invalid file type. Please upload an image (JPEG, PNG, WebP, or GIF).");
       return;
     }
 
-    // Validate file size (50MB - increased to accommodate larger images)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    // Validate file size (50MB)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
-      const errorMsg = `File size (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit. Please choose a smaller image or compress it.`;
-      console.error("❌ File too large:", { 
-        fileName: file.name,
-        fileSize: file.size, 
-        fileSizeMB,
-        maxSize, 
-        maxSizeMB 
-      });
-      setError(errorMsg);
-      setUploadingImage(false);
-      // Clear the file input
-      const fileInput = document.getElementById("fileUpload") as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
+      setError(`File size exceeds the 50MB limit. Please choose a smaller image.`);
       return;
     }
-    
-    console.log("✅ File size check passed:", {
-      fileSize: file.size,
-      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
-      maxSizeMB: (maxSize / (1024 * 1024)).toFixed(0),
-    });
 
-    console.log("✅ File validation passed, starting upload...");
     setUploadingImage(true);
     setError("");
 
@@ -128,40 +141,17 @@ export default function NewArticlePage() {
       }
 
       const data = await response.json();
-      console.log("📤 Image upload response:", data);
-      
       if (!data.url) {
-        console.error("❌ No URL in response:", data);
-        throw new Error("Upload succeeded but no URL was returned. Response: " + JSON.stringify(data));
+        throw new Error("Upload succeeded but no URL was returned");
       }
-      
-      const imageUrl = data.url;
-      console.log("✅ Setting featuredImage to:", imageUrl);
-      
-      // Use functional update to ensure we're using the latest state
-      setFormData((prev) => {
-        const updated = { ...prev, featuredImage: imageUrl };
-        console.log("📝 Updated formData:", {
-          before: prev.featuredImage || "(empty)",
-          after: updated.featuredImage,
-        });
-        return updated;
-      });
-      
-      setImagePreview(imageUrl);
+
+      setFormData((prev) => ({ ...prev, featuredImage: data.url }));
+      setImagePreview(data.url);
       setUploadSuccess(true);
-      console.log("✅ Image preview and formData updated. Current state:", imageUrl);
-      
-      // Show success message
-      setError(""); // Clear any previous errors
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setUploadSuccess(false), 3000);
     } catch (err: any) {
-      console.error("❌ Image upload error:", err);
+      console.error("Image upload error:", err);
       setError(err.message || "Failed to upload image");
-      setUploadSuccess(false);
-      setImagePreview("");
     } finally {
       setUploadingImage(false);
     }
@@ -175,37 +165,13 @@ export default function NewArticlePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError("");
 
-    // Validate that if image was uploaded, it's still in formData
-    if (imagePreview && !formData.featuredImage) {
-      console.error("❌ Image preview exists but featuredImage is empty!", {
-        imagePreview,
-        featuredImage: formData.featuredImage,
-      });
-      setError("Image was uploaded but URL is missing. Please upload the image again.");
-      setLoading(false);
-      return;
-    }
-    
-    // Warn if trying to submit without an image (but allow it)
-    if (!formData.featuredImage) {
-      console.warn("⚠️ Submitting article without featured image");
-      const confirmSubmit = window.confirm(
-        "You're submitting without a featured image. The article will be created but won't have a preview image. Continue?"
-      );
-      if (!confirmSubmit) {
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
-      // First, get or create categories
+      // Get or create categories
       const categoryPromises = formData.categoryIds.map(async (categorySlug) => {
         try {
-          // Try to find existing category
           const response = await fetch(`/api/categories?slug=${categorySlug}`);
           if (response.ok) {
             const data = await response.json();
@@ -235,14 +201,7 @@ export default function NewArticlePage() {
 
       const categoryIds = (await Promise.all(categoryPromises)).filter((id) => id !== null) as string[];
 
-      // Create article
-      console.log("📋 Current formData before submission:", {
-        title: formData.title,
-        featuredImage: formData.featuredImage || "(empty)",
-        hasFeaturedImage: !!formData.featuredImage,
-        imagePreview: imagePreview || "(no preview)",
-      });
-      
+      // Update article
       const articlePayload = {
         title: formData.title,
         slug: formData.slug,
@@ -252,28 +211,36 @@ export default function NewArticlePage() {
         published: formData.published,
         categories: categoryIds,
       };
-      
-      console.log("📤 Submitting article with featuredImage:", articlePayload.featuredImage || "(not set)");
-      
-      const response = await fetch("/api/articles", {
-        method: "POST",
+
+      const response = await fetch(`/api/articles/${articleSlug}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(articlePayload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create article");
+        throw new Error(errorData.error || "Failed to update article");
       }
 
-      const article = await response.json();
       router.push("/admin/articles");
     } catch (err: any) {
-      setError(err.message || "An error occurred while creating the article");
+      setError(err.message || "An error occurred while updating the article");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#007CFF] mx-auto mb-4"></div>
+          <p className="text-[#4A5768]">Loading article...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F3F4F6]">
@@ -289,27 +256,18 @@ export default function NewArticlePage() {
                 ← Back to Articles
               </Link>
               <h1 className="text-xl sm:text-2xl font-heading font-bold text-[#0A1A33]">
-                Create New Article
+                Edit Article
               </h1>
             </div>
           </div>
         </div>
       </header>
 
-          <div className="mx-auto max-w-4xl px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         {error && (
           <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-600">
             <p className="font-semibold">Error:</p>
             <p>{error}</p>
-          </div>
-        )}
-        
-        {/* Debug info in development */}
-        {process.env.NODE_ENV === "development" && formData.featuredImage && (
-          <div className="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4 text-xs text-blue-600">
-            <p className="font-semibold">Debug Info:</p>
-            <p>Featured Image URL: {formData.featuredImage}</p>
-            <p>Image Preview: {imagePreview || "Not set"}</p>
           </div>
         )}
 
@@ -428,10 +386,6 @@ export default function NewArticlePage() {
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                     onChange={handleFileUpload}
-                    onClick={(e) => {
-                      console.log("🖱️ File input clicked");
-                      (e.target as HTMLInputElement).value = ""; // Reset to allow re-selecting same file
-                    }}
                     disabled={uploadingImage}
                     className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#2D3748] file:mr-4 file:rounded-lg file:border-0 file:bg-[#007CFF] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#0066CC] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20 disabled:opacity-50 cursor-pointer"
                   />
@@ -446,18 +400,6 @@ export default function NewArticlePage() {
                     </p>
                   </div>
                 )}
-                {formData.featuredImage && !uploadingImage && (
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs font-medium text-green-600">
-                      ✓ Image URL saved: {formData.featuredImage.substring(0, 60)}...
-                    </p>
-                  </div>
-                )}
-                {!formData.featuredImage && !uploadingImage && !uploadSuccess && (
-                  <p className="mt-2 text-xs text-[#4A5768]">
-                    No image uploaded yet. Please select an image file.
-                  </p>
-                )}
               </div>
             ) : (
               <div>
@@ -469,11 +411,6 @@ export default function NewArticlePage() {
                   className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
                   placeholder="https://example.com/image.jpg"
                 />
-                {formData.featuredImage && (
-                  <p className="mt-2 text-xs text-green-600">
-                    ✓ Image URL set: {formData.featuredImage.substring(0, 50)}...
-                  </p>
-                )}
               </div>
             )}
 
@@ -545,10 +482,10 @@ export default function NewArticlePage() {
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="rounded-lg bg-[#007CFF] px-6 py-3 text-base font-medium text-white shadow-md transition-all hover:bg-[#0066CC] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating..." : "Create Article"}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
             <Link
               href="/admin/articles"
@@ -562,4 +499,3 @@ export default function NewArticlePage() {
     </div>
   );
 }
-

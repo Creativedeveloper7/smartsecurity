@@ -31,6 +31,9 @@ export default function BlogPage() {
     return process.env.NEXT_PUBLIC_SITE_URL || "";
   }, []);
 
+  // Constant limit - don't include in dependencies
+  const ARTICLES_PER_PAGE = 9;
+
   const resolveImageUrl = (url?: string | null) => {
     if (!url) return "";
     // If it's already a full URL (http/https), return as-is
@@ -52,7 +55,7 @@ export default function BlogPage() {
       try {
         setLoading(true);
         const params = new URLSearchParams();
-        params.set("limit", pagination.limit.toString());
+        params.set("limit", ARTICLES_PER_PAGE.toString());
         params.set("page", page.toString());
         if (selectedCategory !== "all") params.set("category", selectedCategory);
         if (searchQuery) params.set("search", searchQuery);
@@ -69,14 +72,14 @@ export default function BlogPage() {
         if (articlesData.error) {
           console.warn("API returned error:", articlesData.error);
           setArticles([]);
-          setPagination({ page: 1, limit: 9, totalPages: 1, total: 0 });
+          setPagination({ page: 1, limit: ARTICLES_PER_PAGE, totalPages: 1, total: 0 });
           // Don't set error state for database issues - just show empty state
           if (articlesData.error !== "Database connection failed") {
             setError(articlesData.message || "Failed to load articles");
           }
         } else {
           setArticles(articlesData.articles || []);
-          setPagination(articlesData.pagination || { page: 1, limit: 9, totalPages: 1, total: 0 });
+          setPagination(articlesData.pagination || { page: 1, limit: ARTICLES_PER_PAGE, totalPages: 1, total: 0 });
         }
 
         // Handle categories - if error, just use empty array
@@ -90,7 +93,7 @@ export default function BlogPage() {
         if (err.name === "AbortError") return;
         console.error("Error fetching data:", err);
         setArticles([]);
-        setPagination({ page: 1, limit: 9, totalPages: 1, total: 0 });
+        setPagination({ page: 1, limit: ARTICLES_PER_PAGE, totalPages: 1, total: 0 });
         setCategories([{ name: "All", slug: "all" }]);
         // Only show error for non-network issues
         if (!err.message?.includes("fetch")) {
@@ -103,7 +106,7 @@ export default function BlogPage() {
 
     fetchData();
     return () => controller.abort();
-  }, [page, selectedCategory, searchQuery, pagination.limit]);
+  }, [page, selectedCategory, searchQuery]);
 
   // Reset page when filters change
   useEffect(() => {
