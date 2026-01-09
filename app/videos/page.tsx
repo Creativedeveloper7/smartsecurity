@@ -434,9 +434,14 @@ export default function VideosPage() {
       {isModalOpen && selectedVideo && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
-          onClick={closeModal}
+          onClick={(e) => {
+            // Only close if clicking the backdrop itself, not children
+            if (e.target === e.currentTarget) {
+              closeModal();
+            }
+          }}
           onTouchStart={(e) => {
-            // Only close if clicking the backdrop, not the modal content
+            // Only close if touching the backdrop, not the modal content
             if (e.target === e.currentTarget) {
               closeModal();
             }
@@ -444,8 +449,12 @@ export default function VideosPage() {
         >
           <div
             className="relative my-8 w-full max-w-4xl rounded-lg bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
           >
             {/* Close Button */}
             <button
@@ -498,10 +507,20 @@ export default function VideosPage() {
               {/* Video Player */}
               <div className="p-8">
                 <div 
-                  className="aspect-video w-full overflow-hidden rounded-lg bg-black"
-                  onClick={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  style={{ touchAction: 'manipulation' }}
+                  className="aspect-video w-full overflow-hidden rounded-lg bg-black relative"
+                  style={{ touchAction: 'manipulation', pointerEvents: 'auto' }}
+                  onMouseDown={(e) => {
+                    // Only stop propagation if clicking the container itself
+                    if (e.target === e.currentTarget) {
+                      e.stopPropagation();
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    // Only stop propagation if touching the container itself
+                    if (e.target === e.currentTarget) {
+                      e.stopPropagation();
+                    }
+                  }}
                 >
                   {selectedVideo.youtubeUrl ? (
                     <iframe
@@ -521,24 +540,25 @@ export default function VideosPage() {
                       preload="metadata"
                       className="h-full w-full"
                       style={{ 
-                        pointerEvents: 'auto', 
+                        pointerEvents: 'auto',
                         touchAction: 'manipulation',
                         WebkitTouchCallout: 'none',
                         WebkitUserSelect: 'none',
-                        userSelect: 'none'
+                        userSelect: 'none',
+                        zIndex: 10,
+                        position: 'relative'
                       }}
                       onClick={(e) => {
+                        // Stop event propagation to prevent modal from closing
+                        // But allow default behavior so video controls work
                         e.stopPropagation();
-                        // Prevent modal from closing when clicking video controls
-                        const target = e.target as HTMLElement;
-                        if (target.tagName === 'VIDEO' || target.closest('video')) {
-                          e.stopPropagation();
-                        }
                       }}
                       onTouchStart={(e) => {
+                        // Stop propagation but don't prevent default to allow native controls
                         e.stopPropagation();
                       }}
                       onTouchEnd={(e) => {
+                        // Stop propagation but don't prevent default
                         e.stopPropagation();
                       }}
                       onPlay={(e) => {
@@ -548,10 +568,20 @@ export default function VideosPage() {
                         e.stopPropagation();
                       }}
                       onLoadedMetadata={() => {
-                        // Ensure video is ready but don't autoplay
+                        // Ensure video is ready
                         if (videoRef.current) {
                           videoRef.current.currentTime = 0;
                         }
+                      }}
+                      onLoadedData={() => {
+                        // Video is loaded and ready
+                        if (videoRef.current) {
+                          videoRef.current.currentTime = 0;
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        // Prevent context menu from interfering
+                        e.stopPropagation();
                       }}
                     >
                       Your browser does not support the video tag.
