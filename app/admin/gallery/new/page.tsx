@@ -56,7 +56,7 @@ export default function NewGalleryImagePage() {
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
 
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload?type=gallery", {
         method: "POST",
         body: uploadFormData,
       });

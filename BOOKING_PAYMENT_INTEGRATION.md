@@ -208,3 +208,4 @@ model Booking {
 **Note**: Consider adding `paymentIntent String?` field in future migration for cleaner payment reference storage.
 
 
+

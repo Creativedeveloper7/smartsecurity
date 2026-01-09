@@ -74,7 +74,7 @@ export default function NewCoursePage() {
     formData.append("file", selectedFile);
 
     try {
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload?type=courses", {
         method: "POST",
         body: formData,
       });

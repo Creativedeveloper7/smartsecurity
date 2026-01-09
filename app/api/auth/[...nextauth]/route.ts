@@ -46,9 +46,17 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // For demo purposes - in production, use proper password hashing
-          // const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-          // if (!isPasswordValid) return null;
+          // Verify password if user has one stored
+          if (user.password) {
+            const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+            if (!isPasswordValid) {
+              return null;
+            }
+          } else {
+            // If no password is set, allow login (for migration period)
+            // TODO: Remove this after all users have passwords set
+            console.warn(`User ${user.email} logged in without password (password not set)`);
+          }
 
           return {
             id: user.id,

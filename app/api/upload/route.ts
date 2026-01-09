@@ -6,7 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "uploads";
+// Use the IMAGES bucket that exists in Supabase
+const SUPABASE_STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "IMAGES";
 
 // Fallback to local filesystem if Supabase is not configured
 const USE_LOCAL_STORAGE = !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY;
@@ -93,7 +94,14 @@ export async function POST(request: Request) {
     // Use Supabase Storage
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    const path = `articles/${fileName}`;
+    // Determine upload type from query parameter or default to 'general'
+    const url = new URL(request.url);
+    const uploadType = url.searchParams.get("type") || "general";
+    
+    // Organize uploads by type: articles, products, courses, gallery, general
+    const validTypes = ["articles", "products", "courses", "gallery", "general"];
+    const folder = validTypes.includes(uploadType) ? uploadType : "general";
+    const path = `${folder}/${fileName}`;
 
     // Ensure bucket exists and is public (no-op if it already exists)
     await supabase.storage

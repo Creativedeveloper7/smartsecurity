@@ -17,6 +17,8 @@ export default function NewProductPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [useUrlInput, setUseUrlInput] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -64,7 +66,7 @@ export default function NewProductPage() {
         const uploadFormData = new FormData();
         uploadFormData.append("file", file);
 
-        const response = await fetch("/api/upload", {
+        const response = await fetch("/api/upload?type=products", {
           method: "POST",
           body: uploadFormData,
         });
@@ -95,6 +97,29 @@ export default function NewProductPage() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleAddImageUrl = () => {
+    const url = imageUrlInput.trim();
+    if (!url) {
+      setError("Please enter a valid image URL");
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      setError("Please enter a valid URL (must start with http:// or https://)");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, url],
+    }));
+    setImageUrlInput("");
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,28 +323,93 @@ export default function NewProductPage() {
           {/* Product Images */}
           <div>
             <label className="mb-2 block text-sm font-medium text-[#1F2937]">
-              Product Images * (Upload multiple images)
+              Product Images * (Upload multiple images or paste URLs)
             </label>
-            <input
-              id="imageUpload"
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-              multiple
-              onChange={handleImageUpload}
-              disabled={uploadingImages}
-              className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#2D3748] file:mr-4 file:rounded-lg file:border-0 file:bg-[#007CFF] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#0066CC] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20 disabled:opacity-50"
-            />
-            {uploadingImages && (
-              <p className="mt-2 text-xs text-[#4A5768]">Uploading images...</p>
+            
+            {/* Toggle between file upload and URL */}
+            <div className="mb-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setUseUrlInput(false);
+                  setError("");
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  !useUrlInput
+                    ? "bg-[#007CFF] text-white"
+                    : "bg-[#F3F4F6] text-[#2D3748] hover:bg-[#E5E7EB]"
+                }`}
+              >
+                Upload Images
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUseUrlInput(true);
+                  setError("");
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  useUrlInput
+                    ? "bg-[#007CFF] text-white"
+                    : "bg-[#F3F4F6] text-[#2D3748] hover:bg-[#E5E7EB]"
+                }`}
+              >
+                Paste URL
+              </button>
+            </div>
+
+            {!useUrlInput ? (
+              <div>
+                <input
+                  id="imageUpload"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  multiple
+                  onChange={handleImageUpload}
+                  disabled={uploadingImages}
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#2D3748] file:mr-4 file:rounded-lg file:border-0 file:bg-[#007CFF] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[#0066CC] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20 disabled:opacity-50"
+                />
+                {uploadingImages && (
+                  <p className="mt-2 text-xs text-[#4A5768]">Uploading images...</p>
+                )}
+                {formData.images.length > 0 && !uploadingImages && (
+                  <p className="mt-2 text-xs text-green-600">
+                    ✓ {formData.images.length} image{formData.images.length !== 1 ? "s" : ""} uploaded
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-[#4A5768]">
+                  You can select multiple images at once. Supported formats: JPEG, PNG, WebP, GIF (Max 5MB each)
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddImageUrl();
+                      }
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                    className="flex-1 rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-sm text-[#2D3748] placeholder:text-[#4A5768] focus:border-[#007CFF] focus:outline-none focus:ring-2 focus:ring-[#007CFF]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    className="rounded-lg bg-[#007CFF] px-4 py-3 text-sm font-medium text-white transition-all hover:bg-[#0066CC]"
+                  >
+                    Add URL
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-[#4A5768]">
+                  Paste image URLs (one at a time). Press Enter or click "Add URL" to add.
+                </p>
+              </div>
             )}
-            {formData.images.length > 0 && !uploadingImages && (
-              <p className="mt-2 text-xs text-green-600">
-                ✓ {formData.images.length} image{formData.images.length !== 1 ? "s" : ""} uploaded
-              </p>
-            )}
-            <p className="mt-1 text-xs text-[#4A5768]">
-              You can select multiple images at once. Supported formats: JPEG, PNG, WebP, GIF (Max 5MB each)
-            </p>
 
             {/* Image Preview Grid */}
             {formData.images.length > 0 && (

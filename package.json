@@ -19,6 +19,7 @@
     "@paystack/inline-js": "^2.22.7",
     "@prisma/client": "6.19.1",
     "@stripe/stripe-js": "^8.6.0",
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.4",

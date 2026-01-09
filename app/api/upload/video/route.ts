@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+// @ts-ignore - module resolution is available at runtime
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_VIDEO_BUCKET = "VIDEOS"; // Use the VIDEOS bucket that exists in Supabase
+
+// Fallback to local filesystem if Supabase is not configured
+const USE_LOCAL_STORAGE = !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request: Request) {
   try {
+    if (USE_LOCAL_STORAGE) {
+      console.log("📁 Using local filesystem storage for videos (Supabase not configured)");
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -39,33 +49,126 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create uploads/videos directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), "public", "uploads", "videos");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const fileExtension = originalName.split(".").pop() || "mp4";
-    const filename = `${timestamp}_${originalName}`;
-    const filepath = join(uploadsDir, filename);
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const fileName = `${timestamp}_${safeName}`;
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    // Use local storage if Supabase is not configured
+    if (USE_LOCAL_STORAGE) {
+      const { writeFile, mkdir } = await import("fs/promises");
+      const { join } = await import("path");
+      const { existsSync } = await import("fs");
 
-    // Return the public URL
-    const publicUrl = `/uploads/videos/${filename}`;
+      // Create uploads/videos directory if it doesn't exist
+      const uploadsDir = join(process.cwd(), "public", "uploads", "videos");
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
+
+      const filepath = join(uploadsDir, fileName);
+
+      // Convert file to buffer and save
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await writeFile(filepath, buffer);
+
+      // Return the public URL
+      const publicUrl = `/uploads/videos/${fileName}`;
+
+      console.log("✅ Video uploaded to local storage:", {
+        path: filepath,
+        url: publicUrl,
+        size: file.size,
+      });
+
+      return NextResponse.json({
+        success: true,
+        url: publicUrl,
+        filename: fileName,
+        size: file.size,
+        type: file.type,
+        bucket: "local",
+      });
+    }
+
+    // Use Supabase Storage
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Determine upload type from query parameter or default to 'general'
+    const url = new URL(request.url);
+    const uploadType = url.searchParams.get("type") || "general";
+    
+    // Organize videos by type: videos, courses, general
+    const validTypes = ["videos", "courses", "general"];
+    const folder = validTypes.includes(uploadType) ? uploadType : "general";
+    const path = `${folder}/${fileName}`;
+
+    // Ensure bucket exists and is public (no-op if it already exists)
+    await supabase.storage
+      .createBucket(SUPABASE_VIDEO_BUCKET, { public: true })
+      .catch(() => {});
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(SUPABASE_VIDEO_BUCKET)
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Supabase video upload error:", uploadError);
+      return NextResponse.json(
+        { error: uploadError.message || "Failed to upload video" },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL (requires bucket to be public or use signed URLs)
+    const { data: publicData } = supabase.storage
+      .from(SUPABASE_VIDEO_BUCKET)
+      .getPublicUrl(path);
+
+    // Allow for cases where Supabase might not return a public URL
+    let publicUrl: string | undefined = publicData?.publicUrl;
+
+    // Fallback: generate a signed URL (valid 30 days) if public URL isn't available
+    if (!publicUrl) {
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from(SUPABASE_VIDEO_BUCKET)
+        .createSignedUrl(path, 60 * 60 * 24 * 30);
+      
+      if (signedError) {
+        console.error("Failed to create signed URL:", signedError);
+      }
+      
+      publicUrl = signedData?.signedUrl ?? publicUrl;
+    }
+
+    // Final check - if we still don't have a URL, return an error
+    if (!publicUrl) {
+      console.error("Failed to get any URL for uploaded video:", path);
+      return NextResponse.json(
+        { error: "Video uploaded but failed to generate accessible URL. Please check Supabase storage configuration." },
+        { status: 500 }
+      );
+    }
+
+    console.log("✅ Video uploaded successfully:", {
+      path,
+      url: publicUrl,
+      bucket: SUPABASE_VIDEO_BUCKET,
+    });
 
     return NextResponse.json({
       success: true,
       url: publicUrl,
-      filename: filename,
+      filename: fileName,
+      path,
       size: file.size,
       type: file.type,
+      bucket: SUPABASE_VIDEO_BUCKET,
     });
   } catch (error: any) {
     console.error("Error uploading video:", error);

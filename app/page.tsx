@@ -4,20 +4,49 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
-export default function Home() {
-  const galleryImages = [
-    "/gallery/President.jpeg",
-    "/gallery/US.jpeg",
-    "/gallery/Bishop.jpeg",
-    "/gallery/salute.jpeg",
-    "/gallery/service.jpeg",
-    "/gallery/Swearing.jpeg",
-    "/gallery/UN .jpeg",
-    "/images/DG.png",
-  ];
+interface GalleryImage {
+  id: string;
+  title: string;
+  description: string | null;
+  imageUrl: string;
+  order: number;
+  createdAt: Date | string;
+}
 
+export default function Home() {
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+
+  // Fetch gallery images from database
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        const response = await fetch("/api/gallery");
+        if (!response.ok) throw new Error("Failed to fetch gallery images");
+        const data = await response.json();
+        
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+          // Extract image URLs from gallery images, sorted by order
+          const sortedImages = data.images
+            .sort((a: GalleryImage, b: GalleryImage) => a.order - b.order)
+            .map((img: GalleryImage) => img.imageUrl)
+            .filter((url: string) => url); // Filter out empty URLs
+          
+          setGalleryImages(sortedImages);
+        } else {
+          // Fallback to empty array if no images found
+          setGalleryImages([]);
+        }
+      } catch (err) {
+        console.error("Error fetching gallery images:", err);
+        // Fallback to empty array on error
+        setGalleryImages([]);
+      }
+    };
+
+    fetchGalleryImages();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -52,22 +81,28 @@ export default function Home() {
       <section className="relative bg-white py-20 lg:py-32 overflow-hidden">
         {/* Full-width Background Image Carousel */}
         <div className="absolute inset-0">
-          {galleryImages.map((image, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                index === currentImageIndex ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <Image
-                src={image}
-                alt={`Gallery image ${index + 1}`}
-                fill
-                className="object-cover"
-                priority={index === 0}
-              />
-            </div>
-          ))}
+          {galleryImages.length > 0 ? (
+            galleryImages.map((image, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                  index === currentImageIndex ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <Image
+                  src={image}
+                  alt={`Gallery image ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  priority={index === 0}
+                  unoptimized={image.startsWith("http")} // Don't optimize external URLs
+                />
+              </div>
+            ))
+          ) : (
+            // Fallback gradient when no images are loaded
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0A1A33] to-[#005B6E]"></div>
+          )}
           
           {/* Gradient Overlay - Fades from left (darker) to right (lighter) */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0A1A33]/90 via-[#0A1A33]/60 to-transparent"></div>

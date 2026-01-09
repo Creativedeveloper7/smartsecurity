@@ -1,32 +1,90 @@
 import { PrismaClient } from "@prisma/client";
 import * as dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
 
 // Load environment variables
 dotenv.config();
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+// Initialize Supabase client for user creation
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabase: ReturnType<typeof createClient> | null = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+} else {
+  console.warn("⚠️  Supabase credentials not found. User creation in Supabase Auth will be skipped.");
+  console.warn("   Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to create users in Supabase Auth.");
+}
 
 async function main() {
   console.log("Seeding database...");
 
-  // Create admin user
+  // Create admin user in Supabase Auth first
   const adminEmail = "admin@example.com";
-  const adminPassword = await bcrypt.hash("admin123", 10);
+  const adminPassword = "admin123";
 
+  let authUserId: string | null = null;
+
+  if (supabase) {
+    try {
+      // Check if user already exists
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const existingUser = existingUsers?.users.find(u => u.email === adminEmail);
+
+      if (existingUser) {
+        console.log(`✅ User ${adminEmail} already exists in Supabase Auth`);
+        authUserId = existingUser.id;
+      } else {
+        // Create user in Supabase Auth
+        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+          email: adminEmail,
+          password: adminPassword,
+          email_confirm: true, // Auto-confirm email
+          user_metadata: {
+            name: "Admin User",
+          },
+        });
+
+        if (createError) {
+          console.error("❌ Error creating user in Supabase Auth:", createError.message);
+          console.log("💡 You can create the user manually in Supabase Dashboard:");
+          console.log("   1. Go to Authentication → Users");
+          console.log("   2. Click 'Add user' → 'Create new user'");
+          console.log("   3. Email:", adminEmail);
+          console.log("   4. Password:", adminPassword);
+        } else {
+          console.log(`✅ Created user in Supabase Auth: ${adminEmail}`);
+          authUserId = newUser.user.id;
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error with Supabase Auth:", error);
+      console.log("💡 Continuing with database seed (user must be created manually in Supabase Auth)");
+    }
+  }
+
+  // Sync user to Prisma User table
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      role: "SUPER_ADMIN",
+      name: "Admin User",
+      // Update ID if we got one from Supabase Auth
+      ...(authUserId && { id: authUserId }),
+    },
     create: {
+      id: authUserId || undefined, // Use Supabase Auth UUID if available, otherwise Prisma will generate
       email: adminEmail,
       name: "Admin User",
       role: "SUPER_ADMIN",
-      // Note: In production, you'd store the hashed password in a separate table
-      // For now, this is a placeholder
+      emailVerified: new Date(), // Auto-confirmed
     },
   });
 
-  console.log("Created admin user:", admin.email);
+  console.log("✅ Synced admin user to database:", admin.email, `(${admin.role})`);
 
   // Create categories
   const categories = await Promise.all([

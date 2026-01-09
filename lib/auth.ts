@@ -1,11 +1,41 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
 export async function getSession() {
   try {
-    return await getServerSession(authOptions);
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !user.email) {
+      return null;
+    }
+
+    // Get user role from database
+    // Match by email since Supabase Auth UUID may differ from Prisma ID
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: { id: true, email: true, name: true, role: true, image: true },
+    });
+
+    if (!dbUser) {
+      // User exists in Supabase Auth but not in our database
+      // This shouldn't happen, but return null to prevent errors
+      console.warn(`User ${user.email} exists in Supabase Auth but not in database`);
+      return null;
+    }
+
+    return {
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        image: dbUser.image,
+        role: dbUser.role,
+      },
+    };
   } catch (error) {
-    // If auth fails (e.g., database not configured), return null
     console.error("Error getting session:", error);
     return null;
   }

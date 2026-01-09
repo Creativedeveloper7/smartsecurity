@@ -117,7 +117,7 @@ export default function NewArticlePage() {
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
 
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload?type=articles", {
         method: "POST",
         body: uploadFormData,
       });
