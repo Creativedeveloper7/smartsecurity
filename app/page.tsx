@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const galleryImages = [
@@ -18,6 +18,9 @@ export default function Home() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isBioModalOpen, setIsBioModalOpen] = useState(false);
+  const expertiseScrollRef = useRef<HTMLDivElement>(null);
+  const [isExpertiseScrolling, setIsExpertiseScrolling] = useState(false);
+  const expertiseScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -46,64 +49,176 @@ export default function Home() {
     };
   }, [isBioModalOpen]);
 
+  // Handle expertise scroll interaction detection
+  useEffect(() => {
+    const scrollContainer = expertiseScrollRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsExpertiseScrolling(true);
+      if (expertiseScrollTimeoutRef.current) {
+        clearTimeout(expertiseScrollTimeoutRef.current);
+      }
+      expertiseScrollTimeoutRef.current = setTimeout(() => {
+        setIsExpertiseScrolling(false);
+      }, 150);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      if (expertiseScrollTimeoutRef.current) {
+        clearTimeout(expertiseScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-scroll expertise cards on mobile
+  /* the i
+    const scrollContainer = expertiseScrollRef.current;
+    if (!scrollContainer) return;
+
+    // Only auto-scroll on mobile (screen width < 768px)
+    const checkMobile = () => window.innerWidth < 768;
+    if (!checkMobile()) return;
+
+    let scrollPosition = 0;
+    let isPaused = false;
+    let lastUserScroll = 0;
+    const scrollSpeed = 0.5; // pixels per frame
+    const cardWidth = 280; // matches w-[280px]
+    const gap = 16; // matches gap-4
+    const cardWidthWithGap = cardWidth + gap;
+    const totalCards = 9;
+    const pauseDuration = 3000; // Pause for 3 seconds after user interaction
+
+    // Calculate max scroll
+    const calculateMaxScroll = () => {
+      return Math.max(0, (cardWidthWithGap * totalCards) - scrollContainer.offsetWidth);
+    };
+
+    let maxScroll = calculateMaxScroll();
+
+    // Handle window resize
+    const handleResize = () => {
+      if (!checkMobile()) {
+        isPaused = true;
+        return;
+      }
+      maxScroll = calculateMaxScroll();
+    };
+
+    // Handle user scroll interaction
+    const handleScroll = () => {
+      lastUserScroll = Date.now();
+      isPaused = true;
+      scrollPosition = scrollContainer.scrollLeft;
+    };
+
+    // Handle touch/mouse interaction
+    const handleInteraction = () => {
+      lastUserScroll = Date.now();
+      isPaused = true;
+    };
+
+    window.addEventListener('resize', handleResize);
+    scrollContainer.addEventListener('scroll', handleScroll);
+    scrollContainer.addEventListener('touchstart', handleInteraction);
+    scrollContainer.addEventListener('mousedown', handleInteraction);
+
+    const scrollInterval = setInterval(() => {
+      // Resume scrolling after pause duration
+      if (isPaused && Date.now() - lastUserScroll > pauseDuration && !isExpertiseScrolling) {
+        isPaused = false;
+      }
+
+      if (!isPaused && checkMobile() && !isExpertiseScrolling) {
+        scrollPosition += scrollSpeed;
+        
+        if (scrollPosition >= maxScroll) {
+          // Reset to start for infinite scroll
+          scrollPosition = 0;
+        }
+        
+        scrollContainer.scrollTo({
+          left: scrollPosition,
+          behavior: 'auto' // Use 'auto' for smooth continuous scroll
+        });
+      }
+    }, 16); // ~60fps
+
+    return () => {
+      clearInterval(scrollInterval);
+      window.removeEventListener('resize', handleResize);
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      scrollContainer.removeEventListener('touchstart', handleInteraction);
+      scrollContainer.removeEventListener('mousedown', handleInteraction);
+    };
+  }, [isExpertiseScrolling]); */
+
+  // Scroll control functions
+  const scrollExpertiseLeft = () => {
+    const scrollContainer = expertiseScrollRef.current;
+    if (!scrollContainer) return;
+    
+    const cardWidth = 280;
+    const gap = 16;
+    const scrollAmount = cardWidth + gap;
+    
+    scrollContainer.scrollBy({
+      left: -scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
+  const scrollExpertiseRight = () => {
+    const scrollContainer = expertiseScrollRef.current;
+    if (!scrollContainer) return;
+    
+    const cardWidth = 280;
+    const gap = 16;
+    const scrollAmount = cardWidth + gap;
+    
+    scrollContainer.scrollBy({
+      left: scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-white py-20 lg:py-32 overflow-hidden">
-        {/* Full-width Background Image Carousel */}
-        <div className="absolute inset-0">
-          {galleryImages.map((image, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                index === currentImageIndex ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <Image
-                src={image}
-                alt={`Gallery image ${index + 1}`}
-                fill
-                className="object-cover"
-                priority={index === 0}
-              />
-            </div>
-          ))}
-          
-          {/* Gradient Overlay - Fades from left (darker) to right (lighter) */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0A1A33]/90 via-[#0A1A33]/60 to-transparent"></div>
-        </div>
-
-        {/* Content Overlay */}
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 z-10">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 min-h-[500px] lg:min-h-[600px]">
-            {/* Left: Text Content */}
-            <div className="flex flex-col justify-center">
+      {/* Hero Section - Full Viewport Height */}
+      <section className="relative bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 min-h-screen flex items-center overflow-hidden py-8 lg:py-0">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-full">
+          {/* Mobile: Stacked Layout, Desktop: Side-by-side */}
+          <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-8 items-center lg:h-[calc(100vh-4rem)]">
+            {/* Logo and Text Section */}
+            <div className="flex flex-col justify-center w-full lg:w-auto py-8 lg:py-0">
               {/* Logo */}
-              <div className="mb-6">
+              <div className="mb-5">
                 <img
                   src="/smart.png"
                   alt="SmartSecurity Consult"
-                  className="h-auto w-auto max-w-[200px]"
-                  style={{ 
-                    background: 'transparent',
-                    filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 12px rgba(0, 124, 255, 0.6)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4))',
-                  }}
+                  className="h-auto w-auto max-w-[180px]"
                 />
               </div>
-              <h1 
-                className="mb-6 text-3xl font-heading font-bold leading-tight text-white sm:text-4xl lg:text-5xl"
-                style={{ color: 'white' }}
-              >
+              
+              {/* Main Title */}
+              <h1 className="mb-4 text-4xl font-heading font-bold leading-tight text-[#0A1A33] sm:text-5xl lg:text-6xl">
                 SmartSecurity Consult
               </h1>
-              <p className="mb-4 text-base text-white/90 drop-shadow-md">
+              
+              {/* Subtitle */}
+              <p className="mb-4 text-lg font-medium text-[#4A5768] leading-relaxed">
                 Expert Security Services in Kenya
               </p>
-              <p className="mb-8 text-sm leading-relaxed text-white/80 drop-shadow-md">
-                With extensive experience in high-level policing, security detail, intelligence,
-                criminal handling, and consultancy. Providing authoritative security solutions
-                for government and private sector clients.
+              
+              {/* Descriptive Paragraph */}
+              <p className="mb-8 text-base text-[#4A5768] leading-relaxed">
+                With extensive experience in high-level policing, security detail, intelligence, criminal handling, and consultancy. Providing authoritative security solutions for government and private sector clients.
               </p>
+              
+              {/* Call-to-Action Buttons */}
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
                   href="/blog"
@@ -114,7 +229,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/bookings/consultation"
-                  className="inline-flex items-center justify-center rounded-lg border-2 border-white bg-transparent px-8 py-3 text-base font-medium text-white transition-all hover:bg-white/10 hover:border-white/80"
+                  className="inline-flex items-center justify-center rounded-lg border-2 border-[#007CFF] bg-transparent px-8 py-3 text-base font-medium text-[#007CFF] transition-all hover:bg-[#007CFF] hover:text-white"
                 >
                   Book Consultation
                   <i className="fa-regular fa-calendar fa-text ml-2"></i>
@@ -122,41 +237,79 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Empty space for layout balance */}
-            <div className="hidden lg:block"></div>
+            {/* Images Section - Horizontal Scroll on Mobile, Single Image on Desktop */}
+            <div className="w-full lg:w-auto lg:h-full">
+              {/* Mobile: Horizontal Scrolling Images */}
+              <div className="lg:hidden relative -mx-4 px-4">
+                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
+                  {galleryImages.map((image, index) => (
+                    <div
+                      key={index}
+                      className="relative flex-shrink-0 w-[280px] h-[200px] overflow-hidden rounded-lg shadow-lg"
+                    >
+                      <Image
+                        src={image}
+                        alt={`Gallery image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        priority={index === 0}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop: Single Large Image */}
+              <div className="hidden lg:block relative w-full h-[600px] lg:h-full lg:min-h-[600px]">
+                <div className="relative w-full h-full overflow-hidden rounded-lg shadow-2xl">
+                  <Image
+                    src={galleryImages[currentImageIndex]}
+                    alt="SmartSecurity Consult"
+                    fill
+                    className="object-cover"
+                    priority
+                    sizes="50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+                </div>
+                
+                {/* Image Navigation - Desktop controls */}
+                <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+                  <button
+                    onClick={goToPrevious}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-[#0A1A33] shadow-md transition-all hover:bg-white hover:scale-110"
+                    aria-label="Previous image"
+                  >
+                    <i className="fa-solid fa-chevron-left fa-text"></i>
+                  </button>
+                  <button
+                    onClick={goToNext}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm text-[#0A1A33] shadow-md transition-all hover:bg-white hover:scale-110"
+                    aria-label="Next image"
+                  >
+                    <i className="fa-solid fa-chevron-right fa-text"></i>
+                  </button>
+                </div>
+                
+                {/* Dots Indicator - Desktop */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  {galleryImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentImageIndex
+                          ? "w-8 bg-[#007CFF]"
+                          : "w-2 bg-white/70 hover:bg-white"
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Navigation Arrows - Positioned on the right side */}
-        <button
-          onClick={goToPrevious}
-          className="absolute right-20 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white transition-all hover:bg-black/50 hover:scale-110"
-          aria-label="Previous image"
-        >
-          <i className="fa-solid fa-chevron-left fa-text text-xl"></i>
-        </button>
-        <button
-          onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white transition-all hover:bg-black/50 hover:scale-110"
-          aria-label="Next image"
-        >
-          <i className="fa-solid fa-chevron-right fa-text text-xl"></i>
-        </button>
-
-        {/* Dots Indicator - Positioned at bottom right */}
-        <div className="absolute bottom-8 right-1/2 translate-x-1/2 lg:translate-x-0 lg:right-8 z-20 flex gap-2">
-          {galleryImages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentImageIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === currentImageIndex
-                  ? "w-8 bg-white"
-                  : "w-2 bg-white/50 hover:bg-white/75"
-              }`}
-              aria-label={`Go to image ${index + 1}`}
-            />
-          ))}
         </div>
       </section>
 
@@ -293,39 +446,94 @@ export default function Home() {
       {/* Areas of Expertise Section */}
       <section className="bg-[#f5f5f5] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h3 className="mb-6 text-lg font-heading font-semibold text-[#1F2937]">
-            Areas of Expertise
-          </h3>
-              <div className="grid grid-cols-2 gap-4 text-[#F3F4F6]">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-lg font-heading font-semibold text-[#1F2937]">
+              Areas of Expertise
+            </h3>
+            {/* Scroll Controls - Mobile Only */}
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                onClick={scrollExpertiseLeft}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E5E7EB] text-[#0A1A33] shadow-sm transition-all hover:bg-[#F3F4F6] hover:border-[#007CFF]"
+                aria-label="Scroll left"
+              >
+                <i className="fa-solid fa-chevron-left fa-text text-xs"></i>
+              </button>
+              <button
+                onClick={scrollExpertiseRight}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[#E5E7EB] text-[#0A1A33] shadow-sm transition-all hover:bg-[#F3F4F6] hover:border-[#007CFF]"
+                aria-label="Scroll right"
+              >
+                <i className="fa-solid fa-chevron-right fa-text text-xs"></i>
+              </button>
+            </div>
+          </div>
+              
+              {/* Mobile: Horizontal Scroll, Desktop: Grid */}
+              <div className="relative">
+                <div 
+                  ref={expertiseScrollRef}
+                  className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide"
+                >
                 {[
                   {
                     title: "Criminal Investigation",
                     icon: "fa-solid fa-magnifying-glass",
-                    image: "/images/criminal investigation.png",
+                    image: "/images/1.png",
                     fallbackGradient: "from-[#0A1A33] to-[#1F2937]",
                   },
                   {
                     title: "Maritime Security",
                     icon: "fa-solid fa-ship",
-                    image: "/images/maritime security.png",
+                    image: "/images/2.png",
                     fallbackGradient: "from-[#005B6E] to-[#007CFF]",
                   },
                   {
                     title: "Police Leadership",
                     icon: "fa-solid fa-user-tie",
-                    image: "/images/police leadership.png",
+                    image: "/images/3.png",
                     fallbackGradient: "from-[#007CFF] to-[#005B6E]",
                   },
                   {
                     title: "Transnational Organized Crime",
                     icon: "fa-solid fa-globe",
-                    image: "/images/transnational organized crime.png",
+                    image: "/images/4.png",
                     fallbackGradient: "from-[#1F2937] to-[#0A1A33]",
+                  },
+                  {
+                    title: "Intelligence Operations",
+                    icon: "fa-solid fa-brain",
+                    image: "/images/5.png",
+                    fallbackGradient: "from-[#0A1A33] to-[#007CFF]",
+                  },
+                  {
+                    title: "Security Consultancy",
+                    icon: "fa-solid fa-shield-halved",
+                    image: "/images/6.png",
+                    fallbackGradient: "from-[#005B6E] to-[#0A1A33]",
+                  },
+                  {
+                    title: "Counter-Terrorism",
+                    icon: "fa-solid fa-user-shield",
+                    image: "/images/7.png",
+                    fallbackGradient: "from-[#007CFF] to-[#1F2937]",
+                  },
+                  {
+                    title: "Border Security",
+                    icon: "fa-solid fa-landmark",
+                    image: "/images/8.png",
+                    fallbackGradient: "from-[#1F2937] to-[#005B6E]",
+                  },
+                  {
+                    title: "Crisis Management",
+                    icon: "fa-solid fa-triangle-exclamation",
+                    image: "/images/9.png",
+                    fallbackGradient: "from-[#0A1A33] to-[#005B6E]",
                   },
                 ].map((area, index) => (
                   <div
                     key={index}
-                    className="group relative overflow-hidden rounded-lg border border-[#E5E7EB] transition-all hover:border-[#007CFF] hover:shadow-lg"
+                    className="group relative overflow-hidden rounded-lg border border-[#E5E7EB] transition-all hover:border-[#007CFF] hover:shadow-lg flex-shrink-0 w-[280px] md:w-auto"
                   >
                     {/* Background Image with Fallback */}
                     <div className={`relative h-48 w-full overflow-hidden bg-gradient-to-br ${area.fallbackGradient}`}>
@@ -350,7 +558,8 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
-          </div>
+                </div>
+              </div>
         </div>
       </section>
 

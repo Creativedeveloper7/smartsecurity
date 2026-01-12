@@ -10,9 +10,7 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function generateOrderNumber(): string {
   return `ORD-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
-}
-
-/**
+}/**
  * Generate a unique booking number
  */
 export function generateBookingNumber(): string {
