@@ -533,29 +533,32 @@ export default function Home() {
                 ].map((area, index) => (
                   <div
                     key={index}
-                    className="group relative overflow-hidden rounded-lg border border-[#E5E7EB] transition-all hover:border-[#007CFF] hover:shadow-lg flex-shrink-0 w-[280px] md:w-auto"
+                    className="flex-shrink-0 w-[280px] md:w-auto"
                   >
-                    {/* Background Image with Fallback */}
-                    <div className={`relative h-48 w-full overflow-hidden bg-gradient-to-br ${area.fallbackGradient}`}>
-                      <Image
-                        src={area.image}
-                        alt={area.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      {/* Overlay for better text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20"></div>
-                      
-                      {/* Content */}
-                      <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
-                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
-                          <i className={`${area.icon} fa-subtitle text-2xl`}></i>
+                    <div className="group relative overflow-hidden rounded-lg border border-[#E5E7EB] transition-all hover:border-[#007CFF] hover:shadow-lg">
+                      {/* Background Image with Fallback */}
+                      <div className={`relative h-48 w-full overflow-hidden bg-gradient-to-br ${area.fallbackGradient}`}>
+                        <Image
+                          src={area.image}
+                          alt={area.title}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        {/* Overlay for better icon visibility */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/20 to-black/10"></div>
+                        
+                        {/* Icon - Bottom Left */}
+                        <div className="absolute bottom-0 left-0 p-6">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
+                            <i className={`${area.icon} fa-subtitle text-2xl text-white`}></i>
+                          </div>
                         </div>
-                        <h4 className="text-sm font-heading font-semibold leading-tight text-[#F3F4F6]">
-                          {area.title}
-                        </h4>
                       </div>
                     </div>
+                    {/* Title below card */}
+                    <h4 className="mt-3 text-center text-sm font-heading font-semibold leading-tight text-[#1F2937]">
+                      {area.title}
+                    </h4>
                   </div>
                 ))}
                 </div>
